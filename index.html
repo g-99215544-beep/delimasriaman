@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistem Semak & Edit ID Delima Murid</title>
+<style>
+body{font-family:Arial,Helvetica,sans-serif;margin:0;background:#f5f7fa;color:#222}
+header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#1e3a8a;color:#fff}
+header h1{font-size:18px;margin:0}
+#gear{cursor:pointer;font-size:20px}
+.container{padding:12px}
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.controls input,.controls select,.controls button{padding:8px;border:1px solid #ccc;border-radius:4px;font-size:14px}
+.controls button{cursor:pointer;background:#1e3a8a;color:#fff;border:none}
+.controls button.secondary{background:#6b7280}
+.controls button.danger{background:#dc2626}
+.table-wrapper{overflow-x:auto;background:#fff;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.1)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;white-space:nowrap}
+th{background:#f1f5f9;font-weight:600}
+tr:hover{background:#f9fafb}
+td[contenteditable="true"]{background:#fff7ed;outline:1px solid #fb923c}
+.actions button{margin-right:4px;padding:4px 6px;font-size:12px;border:none;border-radius:4px;cursor:pointer}
+.actions .move{background:#2563eb;color:#fff}
+.actions .delete{background:#dc2626;color:#fff}
+.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);display:none;align-items:center;justify-content:center;z-index:1000}
+.modal-content{background:#fff;padding:16px;border-radius:8px;min-width:260px}
+.modal-content h3{margin-top:0;font-size:16px}
+.modal-content select,.modal-content button{width:100%;padding:8px;margin-top:8px}
+.hidden{display:none}
+.admin-badge{background:#22c55e;color:#fff;padding:4px 8px;border-radius:999px;font-size:12px;margin-left:8px}
+@media(max-width:600px){
+header h1{font-size:14px}
+.controls{flex-direction:column}
+}
+</style>
+</head>
+<body>
+<header>
+<div>
+<h1>Sistem Semak & Edit ID Delima Murid</h1>
+<span id="adminBadge" class="admin-badge hidden">ADMIN MODE</span>
+</div>
+<div id="gear">⚙️</div>
+</header>
+
+<div class="container">
+<div class="controls">
+<input type="text" id="searchInput" placeholder="Cari nama, IC, email atau apa-apa...">
+<select id="filterTingkatan">
+<option value="">Semua Tingkatan</option>
+<option value="D1">D1</option>
+<option value="D2">D2</option>
+<option value="D3">D3</option>
+<option value="D4">D4</option>
+<option value="D5">D5</option>
+<option value="D6">D6</option>
+</select>
+<select id="filterKelas">
+<option value="">Semua Kelas</option>
+<option value="BESTARI">BESTARI</option>
+<option value="CEMERLANG">CEMERLANG</option>
+<option value="GEMILANG">GEMILANG</option>
+</select>
+<button id="autoPromoteBtn" class="hidden">Auto Naik Kelas (2026 → 2027)</button>
+<button id="saveBtn" class="hidden">☁️ Simpan ke Google Sheet</button>
+<button id="exportBtn">⬇ Download Excel</button>
+</div>
+
+<div class="table-wrapper">
+<table id="dataTable">
+<thead></thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+
+<div class="modal" id="moveModal">
+<div class="modal-content">
+<h3>Pindah Kelas</h3>
+<select id="classSelect"></select>
+<button id="confirmMoveBtn">Sahkan</button>
+<button id="cancelMoveBtn">Batal</button>
+</div>
+</div>
+
+<script>
+const API_URL="https://script.google.com/macros/s/AKfycbxlIndZeXOZJAIcEvoqzhEV1K5Pgc-kUXuTzH49rUCBNGW_tmJE-Ob0DqPIraAQ28mMaw/exec"
+let rawData=[]
+let headers=[]
+let adminMode=false
+let currentMoveIndex=null
+
+const classList=[
+"D1 BESTARI","D1 CEMERLANG","D1 GEMILANG",
+"D2 BESTARI","D2 CEMERLANG","D2 GEMILANG",
+"D3 BESTARI","D3 CEMERLANG","D3 GEMILANG",
+"D4 BESTARI","D4 CEMERLANG","D4 GEMILANG",
+"D5 BESTARI","D5 CEMERLANG","D5 GEMILANG",
+"D6 BESTARI","D6 CEMERLANG","D6 GEMILANG"
+]
+
+const dataTableHead=document.querySelector("#dataTable thead")
+const dataTableBody=document.querySelector("#dataTable tbody")
+const searchInput=document.getElementById("searchInput")
+const filterTingkatan=document.getElementById("filterTingkatan")
+const filterKelas=document.getElementById("filterKelas")
+const gear=document.getElementById("gear")
+const adminBadge=document.getElementById("adminBadge")
+const autoPromoteBtn=document.getElementById("autoPromoteBtn")
+const saveBtn=document.getElementById("saveBtn")
+const exportBtn=document.getElementById("exportBtn")
+const moveModal=document.getElementById("moveModal")
+const classSelect=document.getElementById("classSelect")
+const confirmMoveBtn=document.getElementById("confirmMoveBtn")
+const cancelMoveBtn=document.getElementById("cancelMoveBtn")
+
+async function loadData(){
+const res=await fetch(API_URL)
+const json=await res.json()
+headers=json[0]
+rawData=json.slice(1)
+renderTable()
+}
+
+function renderTable(){
+dataTableHead.innerHTML=""
+dataTableBody.innerHTML=""
+let tr=document.createElement("tr")
+headers.forEach(h=>{
+let th=document.createElement("th")
+th.textContent=h
+tr.appendChild(th)
+})
+let actionTh=document.createElement("th")
+actionTh.textContent="Tindakan"
+tr.appendChild(actionTh)
+dataTableHead.appendChild(tr)
+
+let filtered=rawData.filter(row=>{
+let search=searchInput.value.toLowerCase()
+let matchSearch=row.join(" ").toLowerCase().includes(search)
+let tingIndex=headers.findIndex(h=>String(h).trim().toLowerCase()==="tingkatan")
+let kelasIndex=headers.findIndex(h=>String(h).trim().toLowerCase()==="nama kelas")
+let matchTing=filterTingkatan.value?row[tingIndex]===filterTingkatan.value:true
+let matchKelas=filterKelas.value?row[kelasIndex]===filterKelas.value:true
+return matchSearch && matchTing && matchKelas
+})
+
+filtered.forEach((row)=>{
+let tr=document.createElement("tr")
+row.forEach((cell,i)=>{
+let td=document.createElement("td")
+td.textContent=cell
+if(adminMode){
+td.contentEditable=true
+td.addEventListener("input",e=>{
+let realIndex=rawData.indexOf(row)
+rawData[realIndex][i]=e.target.textContent
+})
+}
+tr.appendChild(td)
+})
+let actionTd=document.createElement("td")
+actionTd.className="actions"
+if(adminMode){
+let moveBtn=document.createElement("button")
+moveBtn.textContent="Pindah"
+moveBtn.className="move"
+moveBtn.onclick=()=>openMoveModal(row)
+let delBtn=document.createElement("button")
+delBtn.textContent="Padam"
+delBtn.className="delete"
+delBtn.onclick=()=>deleteRow(row)
+actionTd.appendChild(moveBtn)
+actionTd.appendChild(delBtn)
+}
+tr.appendChild(actionTd)
+dataTableBody.appendChild(tr)
+})
+}
+
+function openMoveModal(row){
+currentMoveIndex=rawData.indexOf(row)
+classSelect.innerHTML=""
+classList.forEach(c=>{
+let opt=document.createElement("option")
+opt.value=c
+opt.textContent=c
+classSelect.appendChild(opt)
+})
+moveModal.style.display="flex"
+}
+
+confirmMoveBtn.onclick=()=>{
+let selected=classSelect.value
+let parts=selected.split(" ")
+let tingkatan=parts[0]
+let kelas=parts[1]
+let tingIndex=headers.findIndex(h=>String(h).trim().toLowerCase()==="tingkatan")
+let kelasIndex=headers.findIndex(h=>String(h).trim().toLowerCase()==="nama kelas")
+rawData[currentMoveIndex][tingIndex]=tingkatan
+rawData[currentMoveIndex][kelasIndex]=kelas
+moveModal.style.display="none"
+renderTable()
+}
+
+cancelMoveBtn.onclick=()=>{
+moveModal.style.display="none"
+}
+
+function deleteRow(row){
+if(!confirm("Pasti mahu padam murid ini?"))return
+let idx=rawData.indexOf(row)
+rawData.splice(idx,1)
+renderTable()
+}
+
+gear.onclick=()=>{
+if(adminMode)return
+let pass=prompt("Masukkan password admin")
+if(pass==="admin123"){
+adminMode=true
+adminBadge.classList.remove("hidden")
+autoPromoteBtn.classList.remove("hidden")
+saveBtn.classList.remove("hidden")
+renderTable()
+}else{
+alert("Password salah")
+}
+}
+
+autoPromoteBtn.onclick=()=>{
+const tingIndex=headers.findIndex(h=>String(h).trim().toLowerCase()==="tingkatan")
+const kelasIndex=headers.findIndex(h=>String(h).trim().toLowerCase()==="nama kelas")
+if(tingIndex===-1){
+alert("Header Tingkatan tidak dijumpai")
+return
+}
+let newData=[]
+rawData.forEach(row=>{
+let tRaw=row[tingIndex]
+if(!tRaw)return
+let s=String(tRaw).trim().toUpperCase()
+let m=s.match(/^D\s*([1-6])$/)
+if(!m)return
+let num=parseInt(m[1])
+if(num===6)return
+let newT="D"+(num+1)
+row[tingIndex]=newT
+if(kelasIndex!==-1)row[kelasIndex]=row[kelasIndex]
+newData.push(row)
+})
+rawData=newData
+renderTable()
+}
+
+saveBtn.onclick=async()=>{
+let full=[headers,...rawData]
+await fetch(API_URL,{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify(full)
+})
+alert("Berjaya simpan ke Google Sheet")
+}
+
+exportBtn.onclick=()=>{
+let xml='<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>'
+xml+='<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">'
+xml+='<Worksheet ss:Name="Data"><Table>'
+xml+='<Row>'
+headers.forEach(h=>{xml+='<Cell><Data ss:Type="String">'+h+'</Data></Cell>'})
+xml+='</Row>'
+rawData.forEach(r=>{
+xml+='<Row>'
+r.forEach(c=>{xml+='<Cell><Data ss:Type="String">'+c+'</Data></Cell>'})
+xml+='</Row>'
+})
+xml+='</Table></Worksheet></Workbook>'
+let blob=new Blob([xml],{type:"application/vnd.ms-excel"})
+let link=document.createElement("a")
+link.href=URL.createObjectURL(blob)
+link.download="ID_Delima_Murid.xlsx"
+document.body.appendChild(link)
+link.click()
+document.body.removeChild(link)
+}
+
+searchInput.oninput=renderTable
+filterTingkatan.onchange=renderTable
+filterKelas.onchange=renderTable
+
+loadData()
+</script>
+</body>
+</html>
