@@ -15,6 +15,8 @@
             --text: #1f2937;
             --border: #e5e7eb;
             --white: #ffffff;
+            --warning-bg: #fef2f2;
+            --warning-border: #fca5a5;
         }
 
         * {
@@ -57,6 +59,12 @@
             font-weight: normal;
         }
 
+        /* Admin Button & Badge Wrapper */
+        .admin-btn-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
         .admin-btn {
             background: none;
             border: none;
@@ -71,6 +79,24 @@
         .admin-btn:hover {
             background-color: rgba(255,255,255,0.2);
         }
+
+        /* Badge Notification Style */
+        .badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: var(--danger);
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 11px;
+            font-weight: bold;
+            border: 2px solid var(--primary);
+            display: none; /* Hidden by default */
+            z-index: 101;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .badge.show { display: block; }
 
         /* --- Controls --- */
         .container {
@@ -131,20 +157,17 @@
         .btn-save { background-color: var(--success); }
         .btn-export { background-color: var(--secondary); }
         .btn-promo { background-color: var(--accent); }
+        .btn-report { background-color: var(--danger); } 
         .btn-move { background-color: var(--primary); font-size: 12px; padding: 4px 8px; }
         .btn-del { background-color: var(--danger); font-size: 12px; padding: 4px 8px; }
 
-        .admin-only {
-            display: none !important;
-        }
+        /* Visibility Classes */
+        .admin-only { display: none !important; }
+        body.is-admin .admin-only { display: inline-flex !important; }
+        body.is-admin .admin-col { display: table-cell !important; }
 
-        body.is-admin .admin-only {
-            display: inline-flex !important;
-        }
-
-        body.is-admin .admin-col {
-            display: table-cell !important;
-        }
+        .public-only { display: inline-flex; }
+        body.is-admin .public-only { display: none; }
 
         /* --- Table --- */
         .table-container {
@@ -165,6 +188,7 @@
             padding: 0.75rem 1rem;
             text-align: left;
             border-bottom: 1px solid var(--border);
+            vertical-align: middle;
         }
 
         th {
@@ -180,6 +204,14 @@
             background-color: #f1f5f9;
         }
 
+        /* Row styles for reported issues */
+        tr.has-issue {
+            background-color: var(--warning-bg);
+        }
+        tr.has-issue td {
+            border-bottom-color: var(--warning-border);
+        }
+
         .editable-cell {
             transition: background 0.2s;
         }
@@ -193,6 +225,23 @@
         body.is-admin .editable-cell:focus {
             background-color: #fff;
             outline: 2px solid var(--primary);
+        }
+
+        /* Report Dropdown Style */
+        .report-select {
+            padding: 4px;
+            font-size: 12px;
+            border-color: #ccc;
+            background: white;
+            color: #333;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .report-select.active {
+            border-color: var(--danger);
+            color: var(--danger);
+            font-weight: bold;
+            background-color: #fff5f5;
         }
 
         /* --- Modals --- */
@@ -243,7 +292,7 @@
             width: 100%;
         }
 
-        /* --- Notification --- */
+        /* --- Notification & Loading --- */
         .toast {
             position: fixed;
             bottom: 20px;
@@ -282,7 +331,6 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Responsive adjustments */
         @media (max-width: 768px) {
             .controls { flex-direction: column; align-items: stretch; }
             .btn { width: 100%; justify-content: center; margin-bottom: 5px; }
@@ -305,7 +353,11 @@
             Sistem Semak & Edit ID Delima
             <span>SK Sri Aman</span>
         </div>
-        <button class="admin-btn" onclick="openAdminLogin()" title="Admin Login">⚙️</button>
+        
+        <div class="admin-btn-wrapper">
+            <button class="admin-btn" onclick="openAdminLogin()" title="Admin Login">⚙️</button>
+            <div id="adminBadge" class="badge">0</div>
+        </div>
     </header>
 
     <div class="container">
@@ -332,6 +384,9 @@
                 <option value="CEMERLANG">CEMERLANG</option>
                 <option value="GEMILANG">GEMILANG</option>
             </select>
+
+            <!-- Public User Action: Only show when NOT admin -->
+            <button class="btn btn-report public-only" onclick="saveData()">📩 Hantar Laporan</button>
         </div>
 
         <!-- Admin Action Bar -->
@@ -339,7 +394,7 @@
             <div style="font-weight: bold; color: var(--secondary); margin-right: auto;">MOD ADMIN</div>
             <button class="btn btn-promo" onclick="autoPromote()">🚀 Auto Naik Kelas</button>
             <button class="btn btn-export" onclick="downloadExcel()">⬇ Download Excel</button>
-            <button class="btn btn-save" onclick="saveData()">☁️ Simpan ke Google Sheet</button>
+            <button class="btn btn-save" onclick="saveData()">☁️ Simpan Semua Perubahan</button>
         </div>
 
         <!-- Data Table -->
@@ -411,23 +466,24 @@
 
     <script>
         // --- CONFIGURATION ---
-        // Sila pastikan URL ini dikemaskini dengan URL "Web App" yang baru jika anda melakukan Deploy semula
-        const API_URL = "https://script.google.com/macros/s/AKfycbxZVnrpcL_2dCx7PPQCA07Q6j3GLN_0xyCqgLazLsJ0yaOD6uLeScf1w1GkAyFKzPG7VQ/exec";
+        // PENTING: Gantikan URL di bawah dengan URL Web App anda sendiri jika perlu
+        const API_URL = "https://script.google.com/macros/s/AKfycbxlIndZeXOZJAIcEvoqzhEV1K5Pgc-kUXuTzH49rUCBNGW_tmJE-Ob0DqPIraAQ28mMaw/exec";
         
         // --- STATE ---
-        let rawData = []; // Full 2D array from sheet
-        let headers = []; // Extracted headers
-        let tableData = []; // Array of objects for app manipulation
+        let rawData = [];
+        let headers = []; 
+        let tableData = []; 
         let isAdmin = false;
 
-        // Column Mapping (Indices)
+        // Column Mapping
         let colMap = {
             nama: -1,
             ic: -1,
-            email: -1, // ID Delima
+            email: -1, 
             password: -1,
             tingkatan: -1,
-            kelas: -1
+            kelas: -1,
+            laporan: -1 // New column for Issue Report
         };
 
         // --- INITIALIZATION ---
@@ -450,6 +506,7 @@
 
                 processData(rawData);
                 renderTable();
+                updateBadge(); // Calculate badge on load
             } catch (error) {
                 console.error("Error fetching data:", error);
                 showToast("Gagal mengambil data. Sila refresh.");
@@ -462,27 +519,34 @@
             // Extract headers (Row 0)
             headers = data[0].map(h => (h || "").toString().trim());
             
-            // Map columns based on common names
+            // Map columns intelligently
             headers.forEach((h, index) => {
                 const lower = h.toLowerCase();
                 if (lower.includes("nama") && lower.includes("murid")) colMap.nama = index;
-                else if (lower.includes("ic") || lower.includes("kp") || lower.includes("mykid")) colMap.ic = index;
-                else if (lower.includes("id") || lower.includes("email") || lower.includes("delima")) colMap.email = index;
+                else if (lower.includes("ic") || lower.includes("kp")) colMap.ic = index;
+                else if (lower.includes("id") || lower.includes("email")) colMap.email = index;
                 else if (lower.includes("password") || lower.includes("laluan")) colMap.password = index;
                 else if (lower.includes("tingkatan") || lower.includes("darjah")) colMap.tingkatan = index;
                 else if (lower.includes("kelas")) colMap.kelas = index;
+                else if (lower.includes("laporan") || lower.includes("masalah") || lower.includes("catatan")) colMap.laporan = index;
             });
 
-            // Convert remaining rows to objects containing both value and original index
+            // LOGIC: If 'Laporan' column doesn't exist, create it locally
+            if (colMap.laporan === -1) {
+                headers.push("Laporan Masalah");
+                colMap.laporan = headers.length - 1;
+            }
+
+            // Convert rows
             tableData = [];
             for (let i = 1; i < data.length; i++) {
                 let row = data[i];
-                // Ensure row has enough columns
+                // Fill missing columns
                 while (row.length < headers.length) row.push("");
                 
                 let rowObj = {
-                    _originalIndex: i, // To track position for saving
-                    data: [...row]     // Copy of array data
+                    _originalIndex: i,
+                    data: [...row]
                 };
                 tableData.push(rowObj);
             }
@@ -497,25 +561,19 @@
             const searchTxt = document.getElementById("searchInput").value.toLowerCase();
 
             tbody.innerHTML = "";
+            thead.innerHTML = ""; // Clear header to rebuild
             
-            // Render Headers only once
-            if (thead.children.length === 0) {
-                headers.forEach(h => {
-                    const th = document.createElement("th");
-                    th.textContent = h;
-                    thead.appendChild(th);
-                });
-                // Action column
-                const thAct = document.createElement("th");
-                thAct.textContent = "Aksi";
-                thAct.className = "admin-only admin-col";
-                thAct.style.display = isAdmin ? "table-cell" : "none";
-                thead.appendChild(thAct);
-            } else {
-                // Toggle admin column visibility
-                const lastTh = thead.lastElementChild;
-                lastTh.style.display = isAdmin ? "table-cell" : "none";
-            }
+            // Render Headers
+            headers.forEach(h => {
+                const th = document.createElement("th");
+                th.textContent = h;
+                thead.appendChild(th);
+            });
+            // Admin Action Column
+            const thAct = document.createElement("th");
+            thAct.textContent = "Aksi";
+            thAct.className = "admin-only admin-col";
+            thead.appendChild(thAct);
 
             // Filter Logic
             let visibleCount = 0;
@@ -524,38 +582,76 @@
                 const tingkatan = colMap.tingkatan > -1 ? row[colMap.tingkatan] : "";
                 const kelas = colMap.kelas > -1 ? row[colMap.kelas] : "";
                 
-                // 1. Dropdown Filters
+                // Filters
                 if (filterTing && tingkatan !== filterTing) return;
                 if (filterKls && kelas !== filterKls) return;
 
-                // 2. Search
+                // Search
                 const rowStr = row.join(" ").toLowerCase();
                 if (searchTxt && !rowStr.includes(searchTxt)) return;
 
-                // 3. Render Row
                 visibleCount++;
                 const tr = document.createElement("tr");
-                tr.dataset.idx = index; // Store index in tableData array
+                tr.dataset.idx = index;
+
+                // Highlight if there is a report
+                const reportVal = colMap.laporan > -1 ? row[colMap.laporan] : "";
+                if (reportVal && reportVal.trim() !== "") {
+                    tr.classList.add("has-issue");
+                }
 
                 row.forEach((cellVal, colIdx) => {
                     const td = document.createElement("td");
-                    td.textContent = cellVal;
                     
-                    if (isAdmin) {
-                        td.contentEditable = "true";
-                        td.classList.add("editable-cell");
-                        // Add listener to save edits to local state
-                        td.onblur = function() {
-                            updateCell(index, colIdx, this.textContent);
+                    // --- SPECIAL RENDERING FOR REPORT COLUMN ---
+                    if (colIdx === colMap.laporan) {
+                        // Dropdown for everyone
+                        const select = document.createElement("select");
+                        select.className = "report-select";
+                        if (cellVal && cellVal.trim() !== "") select.classList.add("active");
+                        
+                        const options = ["", "Salah ID", "Salah Password", "Salah IC", "Lain-lain"];
+                        options.forEach(opt => {
+                            const el = document.createElement("option");
+                            el.value = opt;
+                            el.textContent = opt === "" ? "Tiada Masalah" : opt;
+                            if (opt === cellVal) el.selected = true;
+                            el.appendChild(el);
+                            select.appendChild(el);
+                        });
+
+                        select.onchange = function() {
+                            updateCell(index, colIdx, this.value);
+                            // Update style immediately
+                            if(this.value) {
+                                this.classList.add("active");
+                                tr.classList.add("has-issue");
+                            } else {
+                                this.classList.remove("active");
+                                tr.classList.remove("has-issue");
+                            }
+                            updateBadge(); // Update badge count locally
                         };
+
+                        td.appendChild(select);
+                    } 
+                    // --- NORMAL COLUMNS ---
+                    else {
+                        td.textContent = cellVal;
+                        if (isAdmin) {
+                            td.contentEditable = "true";
+                            td.classList.add("editable-cell");
+                            td.onblur = function() {
+                                updateCell(index, colIdx, this.textContent);
+                            };
+                        }
                     }
                     tr.appendChild(td);
                 });
 
-                // Admin Actions Column
+                // Admin Actions Column (Pindah/Delete)
                 const tdAction = document.createElement("td");
                 tdAction.className = "admin-only admin-col";
-                tdAction.style.display = isAdmin ? "table-cell" : "none";
                 tdAction.style.whiteSpace = "nowrap";
                 
                 const btnMove = document.createElement("button");
@@ -579,12 +675,27 @@
             document.getElementById("noData").style.display = visibleCount === 0 ? "block" : "none";
         }
 
+        // --- BADGE LOGIC ---
+        function updateBadge() {
+            if (colMap.laporan === -1) return;
+            
+            // Count rows where Laporan column is NOT empty
+            const issueCount = tableData.filter(r => r.data[colMap.laporan] && r.data[colMap.laporan].trim() !== "").length;
+            
+            const badge = document.getElementById("adminBadge");
+            if (issueCount > 0) {
+                badge.textContent = issueCount;
+                badge.classList.add("show");
+            } else {
+                badge.classList.remove("show");
+            }
+        }
+
         // --- CORE FEATURES ---
 
         function handleSearch() { renderTable(); }
         function applyFilters() { renderTable(); }
 
-        // Update local state when cell is edited
         function updateCell(rowIndex, colIndex, newValue) {
             tableData[rowIndex].data[colIndex] = newValue.trim();
         }
@@ -593,7 +704,6 @@
 
         function openAdminLogin() {
             if (isAdmin) {
-                // Logout logic if already admin
                 if(confirm("Log keluar admin?")) {
                     isAdmin = false;
                     document.body.classList.remove("is-admin");
@@ -620,48 +730,32 @@
             }
         }
 
-        // --- MOVE CLASS LOGIC ---
+        // --- ACTION LOGIC ---
 
         let currentMoveIndex = -1;
-
-        function openMoveModal(index) {
+        function openMoveModal(index) { 
             currentMoveIndex = index;
             const name = tableData[index].data[colMap.nama];
             const ting = tableData[index].data[colMap.tingkatan];
             const kls = tableData[index].data[colMap.kelas];
-
             document.getElementById("moveStudentName").textContent = "Murid: " + name;
-            
-            // Set current values
             const tSelect = document.getElementById("newTingkatan");
             const kSelect = document.getElementById("newKelas");
-            
-            // Try to match current values, else default
-            if(Array.from(tSelect.options).some(o => o.value === ting)) tSelect.value = ting;
-            else tSelect.selectedIndex = 0;
-
-            if(Array.from(kSelect.options).some(o => o.value === kls)) kSelect.value = kls;
-            else kSelect.selectedIndex = 0;
-
+            if(Array.from(tSelect.options).some(o => o.value === ting)) tSelect.value = ting; else tSelect.selectedIndex = 0;
+            if(Array.from(kSelect.options).some(o => o.value === kls)) kSelect.value = kls; else kSelect.selectedIndex = 0;
             document.getElementById("modalMove").style.display = "flex";
         }
 
         function confirmMove() {
             if (currentMoveIndex === -1) return;
-            
             const newTing = document.getElementById("newTingkatan").value;
             const newKls = document.getElementById("newKelas").value;
-
-            // Update State
             if (colMap.tingkatan > -1) tableData[currentMoveIndex].data[colMap.tingkatan] = newTing;
             if (colMap.kelas > -1) tableData[currentMoveIndex].data[colMap.kelas] = newKls;
-
             closeModal("modalMove");
             renderTable();
             showToast("Murid berjaya dipindah.");
         }
-
-        // --- DELETE LOGIC ---
 
         function deleteStudent(index) {
             const name = tableData[index].data[colMap.nama];
@@ -672,109 +766,66 @@
             }
         }
 
-        // --- AUTO PROMOTION LOGIC ---
-
         function autoPromote() {
             if (!confirm("AMARAN: Ini akan menaikkan semua murid 1 tahun (Cth: D1->D2) dan MEMADAM semua murid D6.\n\nAdakah anda pasti?")) return;
-
-            if (colMap.tingkatan === -1) {
-                alert("Ralat: Kolum 'Tingkatan' tidak dijumpai.");
-                return;
-            }
-
-            let promotedCount = 0;
-            let removedCount = 0;
-            const newTableData = [];
-
+            if (colMap.tingkatan === -1) { alert("Ralat: Kolum 'Tingkatan' tidak dijumpai."); return; }
+            let promotedCount = 0; let removedCount = 0; const newTableData = [];
             tableData.forEach(rowObj => {
                 let currentTing = rowObj.data[colMap.tingkatan].toUpperCase().trim();
-                
-                // Logic: Extract number from D1, D2 etc
                 let match = currentTing.match(/D(\d)/);
                 if (match) {
                     let level = parseInt(match[1]);
                     if (level < 6) {
-                        // Promote
                         let newLevel = level + 1;
                         rowObj.data[colMap.tingkatan] = "D" + newLevel;
                         newTableData.push(rowObj);
                         promotedCount++;
-                    } else if (level === 6) {
-                        // Remove D6
-                        removedCount++;
-                        // Do not push to newTableData
-                    } else {
-                        // Keep weird data intact
-                        newTableData.push(rowObj);
-                    }
-                } else {
-                    // Keep rows that don't match D1-D6 format
-                    newTableData.push(rowObj);
-                }
+                    } else if (level === 6) { removedCount++; } else { newTableData.push(rowObj); }
+                } else { newTableData.push(rowObj); }
             });
-
             tableData = newTableData;
             renderTable();
-            alert(`Proses Selesai.\n\nMurid Dinaikkan: ${promotedCount}\nMurid D6 Dipadam: ${removedCount}\n\nSila tekan 'Simpan ke Google Sheet' untuk kekalkan perubahan.`);
+            alert(`Proses Selesai.\n\nMurid Dinaikkan: ${promotedCount}\nMurid D6 Dipadam: ${removedCount}\n\nSila tekan 'Simpan' untuk kekalkan perubahan.`);
         }
 
-        // --- EXPORT & SAVE ---
-
         function downloadExcel() {
-            // Generate CSV content
-            let csvContent = "\uFEFF"; // BOM for UTF-8 in Excel
-            
-            // Headers
-            csvContent += headers.join(",") + "\n";
-
-            // Rows
+            let csvContent = "\uFEFF" + headers.join(",") + "\n";
             tableData.forEach(rowObj => {
                 let row = rowObj.data.map(e => {
-                    // Escape quotes and wrap in quotes if contains comma
                     let cell = String(e || "").replace(/"/g, '""');
                     if (cell.search(/("|,|\n)/g) >= 0) cell = `"${cell}"`;
                     return cell;
                 });
                 csvContent += row.join(",") + "\n";
             });
-
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.setAttribute("href", url);
-            link.setAttribute("download", "Data_ID_Delima_" + new Date().toISOString().slice(0,10) + ".csv");
+            link.setAttribute("download", "Data_ID_Delima.csv");
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         }
 
         async function saveData() {
-            if (!confirm("Simpan perubahan ke Google Sheet? Data sedia ada akan digantikan sepenuhnya.")) return;
+            let msg = isAdmin ? "Simpan perubahan ke Google Sheet?" : "Hantar laporan masalah ke sistem?";
+            if (!confirm(msg)) return;
 
-            showLoading(true, "Sedang menyimpan... (Ini mungkin mengambil masa)");
-
-            // Reconstruct full 2D array [Headers, ...Rows]
+            showLoading(true, "Sedang menyimpan...");
+            // Reconstruct full data with headers
             const finalData = [headers];
             tableData.forEach(rowObj => finalData.push(rowObj.data));
-
+            
             const formData = new FormData();
             formData.append('data', JSON.stringify(finalData));
 
             try {
-                // Gunakan mode: 'no-cors' untuk elak error cross-origin, 
-                // TETAPI pastikan App Script anda telah dikemaskini dengan kod baru.
-                await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: formData
-                });
-                
+                await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: formData });
                 showLoading(false);
-                alert("✅ Permintaan simpan dihantar!\n\nSila tunggu 5-10 saat sebelum refresh page untuk lihat perubahan.");
-                
-                // Refresh data after delay
-                setTimeout(() => fetchData(), 5000); 
-
+                alert("✅ Berjaya disimpan!\n\nPerubahan akan dilihat dalam masa beberapa saat.");
+                // Jika public user hantar report, kita refresh untuk pastikan mereka nampak status terkini
+                if(!isAdmin) setTimeout(() => fetchData(), 3000);
             } catch (error) {
                 console.error("Save error:", error);
                 showLoading(false);
@@ -782,31 +833,17 @@
             }
         }
 
-        // --- UTILS ---
-        function closeModal(id) {
-            document.getElementById(id).style.display = "none";
-        }
-        
+        function closeModal(id) { document.getElementById(id).style.display = "none"; }
         function showLoading(show, text) {
             const el = document.getElementById("loading");
-            const txt = document.getElementById("loadingText");
+            document.getElementById("loadingText").textContent = text || "Loading...";
             el.style.display = show ? "flex" : "none";
-            if(text) txt.textContent = text;
         }
-
         function showToast(msg) {
-            const t = document.getElementById("toast");
-            t.textContent = msg;
-            t.classList.add("show");
+            const t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show");
             setTimeout(() => t.classList.remove("show"), 3000);
         }
-
-        // Close modal on outside click
-        window.onclick = function(event) {
-            if (event.target.classList.contains('modal-overlay')) {
-                event.target.style.display = "none";
-            }
-        }
+        window.onclick = function(event) { if (event.target.classList.contains('modal-overlay')) event.target.style.display = "none"; }
     </script>
 </body>
 </html>
