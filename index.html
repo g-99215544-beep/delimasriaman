@@ -3,349 +3,581 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Rekod Murid</title>
-    <!-- Tailwind CSS untuk styling pantas -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>Sistem Semak & Edit ID Delima Murid - SK Sri Aman</title>
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .loader {
-            border: 3px solid #f3f3f3;
-            border-radius: 50%;
-            border-top: 3px solid #3b82f6;
-            width: 20px;
-            height: 20px;
-            -webkit-animation: spin 1s linear infinite; /* Safari */
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; position: relative; }
+        .header h1 { font-size: 24px; margin-bottom: 5px; }
+        .header p { font-size: 14px; opacity: 0.9; }
+        .admin-icon { position: absolute; top: 20px; right: 20px; font-size: 28px; cursor: pointer; transition: transform 0.2s; }
+        .admin-icon:hover { transform: scale(1.1); }
+        .bell-icon { position: absolute; top: 20px; right: 60px; font-size: 28px; cursor: pointer; transition: transform 0.2s; }
+        .bell-icon:hover { transform: scale(1.1); }
+        .badge { position: absolute; top: 12px; right: 52px; background: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 12px; font-weight: bold; min-width: 20px; text-align: center; display: none; }
+        .badge.show { display: block; }
+        .controls { padding: 20px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; }
+        .controls-row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+        input[type="text"], select { padding: 10px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px; flex: 1; min-width: 200px; }
+        button { padding: 10px 20px; border: none; border-radius: 4px; font-size: 14px; cursor: pointer; transition: background 0.2s; font-weight: 500; }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5568d3; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover { background: #059669; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-secondary { background: #6b7280; color: white; }
+        .btn-secondary:hover { background: #4b5563; }
+        .admin-only { display: none; }
+        .admin-mode .admin-only { display: inline-block; }
+        .table-container { overflow-x: auto; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { background: #f3f4f6; padding: 12px; text-align: left; font-weight: 600; border-bottom: 2px solid #e5e7eb; position: sticky; top: 0; white-space: nowrap; }
+        td { padding: 10px 12px; border-bottom: 1px solid #e5e7eb; }
+        tr:hover { background: #f9fafb; }
+        tr.highlighted { background: #fee2e2 !important; }
+        tr.flash { animation: flash 1s ease-in-out; }
+        @keyframes flash { 0%, 100% { background: inherit; } 50% { background: #fef3c7; } }
+        .editable { cursor: text; min-width: 80px; display: inline-block; padding: 4px; border-radius: 3px; }
+        .editable:hover { background: #f3f4f6; }
+        .editable:focus { outline: 2px solid #667eea; background: white; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; padding: 30px; border-radius: 8px; max-width: 400px; width: 90%; }
+        .modal-content h3 { margin-bottom: 20px; }
+        .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
+        .status-message { padding: 10px 20px; border-radius: 4px; margin: 10px 20px; display: none; }
+        .status-message.success { background: #d1fae5; color: #065f46; display: block; }
+        .status-message.error { background: #fee2e2; color: #991b1b; display: block; }
+        select.laporan-select { width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 3px; font-size: 13px; }
+        @media (max-width: 768px) {
+            .header h1 { font-size: 18px; }
+            .controls-row { flex-direction: column; }
+            input[type="text"], select, button { width: 100%; }
+            table { font-size: 12px; }
+            th, td { padding: 8px; }
         }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800">
-
-    <!-- Konfigurasi URL API di sini -->
-    <input type="hidden" id="apiUrl" value="https://script.google.com/macros/s/AKfycbyxJhuyvjSdxCjctc983FS1oj3APQitMjIKUMAd7MEMeIaEnL5gUgVinOBfrVd_D4129Q/exec">
-
-    <!-- Header -->
-    <nav class="bg-blue-700 text-white shadow-lg sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-                <h1 class="text-xl font-bold tracking-wide">Sistem Rekod Murid</h1>
-            </div>
-            <button onclick="fetchData()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-sm flex items-center gap-2 transition">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                Refresh
-            </button>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Sistem Semak & Edit ID Delima Murid</h1>
+            <p>SK Sri Aman</p>
+            <div class="bell-icon" id="bellIcon">🔔</div>
+            <div class="badge" id="laporanBadge">0</div>
+            <div class="admin-icon" id="adminIcon">⚙️</div>
         </div>
-    </nav>
 
-    <!-- Main Content -->
-    <div class="container mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        <!-- Left Column: Form Tambah -->
-        <div class="lg:col-span-1">
-            <div class="bg-white rounded-xl shadow-md p-6 sticky top-24">
-                <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-blue-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                    </svg>
-                    Tambah Murid Baru
-                </h2>
-                
-                <form id="studentForm" onsubmit="handleSubmit(event)">
-                    <!-- Nama -->
-                    <div class="mb-4">
-                        <label class="block text-sm font-semibold mb-2 text-gray-600">Nama Penuh</label>
-                        <input type="text" id="nama" required 
-                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50"
-                            placeholder="Contoh: Ali bin Abu">
-                    </div>
+        <div id="statusMessage" class="status-message"></div>
 
-                    <!-- Kelas -->
-                    <div class="mb-4">
-                        <label class="block text-sm font-semibold mb-2 text-gray-600">Kelas</label>
-                        <select id="kelas" required 
-                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50">
-                            <option value="" disabled selected>Pilih Kelas</option>
-                            <option value="1 Arif">1 Arif</option>
-                            <option value="1 Bestari">1 Bestari</option>
-                            <option value="2 Cerdik">2 Cerdik</option>
-                            <option value="2 Dedikasi">2 Dedikasi</option>
-                            <option value="3 Efisien">3 Efisien</option>
-                            <option value="4 Fikir">4 Fikir</option>
-                            <option value="5 Gemilang">5 Gemilang</option>
-                        </select>
-                    </div>
-
-                    <!-- Jantina -->
-                    <div class="mb-6">
-                        <label class="block text-sm font-semibold mb-2 text-gray-600">Jantina</label>
-                        <div class="flex gap-4">
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" name="jantina" value="Lelaki" required class="text-blue-600 focus:ring-blue-500">
-                                <span class="text-sm">Lelaki</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" name="jantina" value="Perempuan" required class="text-pink-600 focus:ring-pink-500">
-                                <span class="text-sm">Perempuan</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Butang Submit -->
-                    <button type="submit" id="btnSubmit" 
-                        class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded-lg shadow transition flex justify-center items-center gap-2">
-                        <span>Simpan Data</span>
-                    </button>
-                </form>
+        <div class="controls">
+            <div class="controls-row">
+                <input type="text" id="searchInput" placeholder="🔍 Cari murid (IC, Nama, Email, dll...)">
+                <select id="filterTingkatan">
+                    <option value="">Semua Darjah</option>
+                    <option value="D1">D1</option>
+                    <option value="D2">D2</option>
+                    <option value="D3">D3</option>
+                    <option value="D4">D4</option>
+                    <option value="D5">D5</option>
+                    <option value="D6">D6</option>
+                </select>
+                <select id="filterKelas">
+                    <option value="">Semua Kelas</option>
+                    <option value="BESTARI">BESTARI</option>
+                    <option value="CEMERLANG">CEMERLANG</option>
+                    <option value="GEMILANG">GEMILANG</option>
+                </select>
+            </div>
+            <div class="controls-row">
+                <button class="btn-primary admin-only" id="btnAutoPromote">🚀 Auto Naik Kelas (2026 → 2027)</button>
+                <button class="btn-success admin-only" id="btnSave">☁️ Simpan ke Google Sheet</button>
+                <button class="btn-secondary" id="btnDownload">⬇ Download Excel</button>
+                <button class="btn-primary admin-only" id="btnNextLaporan">⏭️ Next Laporan</button>
+                <button class="btn-success admin-only" id="btnMarkResolved">✅ Mark as Resolved</button>
             </div>
         </div>
 
-        <!-- Right Column: Senarai Data -->
-        <div class="lg:col-span-2">
-            <div class="bg-white rounded-xl shadow-md overflow-hidden">
-                <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
-                    <h2 class="text-lg font-bold text-gray-700 flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                        </svg>
-                        Senarai Murid
-                    </h2>
-                    <span id="recordCount" class="text-xs font-semibold bg-blue-100 text-blue-800 px-2 py-1 rounded-full">0 Rekod</span>
-                </div>
-                
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead class="bg-slate-100 text-slate-600 uppercase text-xs font-semibold">
-                            <tr>
-                                <th class="p-4 border-b w-10">No</th>
-                                <th class="p-4 border-b">Nama Murid</th>
-                                <th class="p-4 border-b">Kelas</th>
-                                <th class="p-4 border-b">Jantina</th>
-                                <th class="p-4 border-b text-center w-20">Tindakan</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableBody" class="text-sm">
-                            <!-- Data akan dimasukkan di sini oleh JavaScript -->
-                            <tr>
-                                <td colspan="5" class="p-8 text-center text-gray-500">
-                                    <div class="flex flex-col items-center justify-center">
-                                        <div class="loader mb-2"></div>
-                                        <p>Sedang memuatkan data...</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+        <div class="table-container">
+            <table id="studentTable">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>IC MURID</th>
+                        <th>Nama Murid</th>
+                        <th>Darjah</th>
+                        <th>Nama Kelas</th>
+                        <th>Email</th>
+                        <th>Password</th>
+                        <th>LAPORAN</th>
+                        <th class="admin-only">Tindakan</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
         </div>
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-5 right-5 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
-        <div class="bg-gray-800 text-white px-6 py-3 rounded-lg shadow-xl flex items-center gap-3">
-            <span id="toastIcon">✅</span>
-            <span id="toastMessage">Operasi Berjaya</span>
+    <div id="moveModal" class="modal">
+        <div class="modal-content">
+            <h3>Pindah Kelas</h3>
+            <select id="moveClassSelect">
+                <option value="D1-BESTARI">D1 BESTARI</option>
+                <option value="D1-CEMERLANG">D1 CEMERLANG</option>
+                <option value="D1-GEMILANG">D1 GEMILANG</option>
+                <option value="D2-BESTARI">D2 BESTARI</option>
+                <option value="D2-CEMERLANG">D2 CEMERLANG</option>
+                <option value="D2-GEMILANG">D2 GEMILANG</option>
+                <option value="D3-BESTARI">D3 BESTARI</option>
+                <option value="D3-CEMERLANG">D3 CEMERLANG</option>
+                <option value="D3-GEMILANG">D3 GEMILANG</option>
+                <option value="D4-BESTARI">D4 BESTARI</option>
+                <option value="D4-CEMERLANG">D4 CEMERLANG</option>
+                <option value="D4-GEMILANG">D4 GEMILANG</option>
+                <option value="D5-BESTARI">D5 BESTARI</option>
+                <option value="D5-CEMERLANG">D5 CEMERLANG</option>
+                <option value="D5-GEMILANG">D5 GEMILANG</option>
+                <option value="D6-BESTARI">D6 BESTARI</option>
+                <option value="D6-CEMERLANG">D6 CEMERLANG</option>
+                <option value="D6-GEMILANG">D6 GEMILANG</option>
+            </select>
+            <div class="modal-buttons">
+                <button class="btn-primary" id="btnConfirmMove">Pindah</button>
+                <button class="btn-secondary" id="btnCancelMove">Batal</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // --- GLOBAL VARIABLES ---
-        let globalData = []; // Menyimpan data murid di memori
-        const apiUrl = document.getElementById('apiUrl').value;
-        const loadingRow = `
-            <tr>
-                <td colspan="5" class="p-8 text-center text-gray-500">
-                    <div class="flex flex-col items-center justify-center">
-                        <div class="loader mb-2"></div>
-                        <p>Sedang memuatkan data...</p>
-                    </div>
-                </td>
-            </tr>`;
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxKHTCYGWTlhzyPeAQqEersNLmcTzcSeDNkvrYE86MTtsvs4ORQyQ-EJwy1Z5N1OSjsEA/exec';
+        let students = [];
+        let headers = [];
+        let isAdmin = false;
+        let moveTargetIndex = -1;
+        let currentLaporanIndex = -1;
+        let laporanIndices = [];
 
-        // --- INIT ---
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchData();
-        });
-
-        // --- FUNCTIONS ---
-
-        // 1. Ambil Data (GET)
-        async function fetchData() {
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = loadingRow;
-
+        async function loadData() {
             try {
-                const response = await fetch(apiUrl);
+                showMessage('Memuatkan data...', 'success');
+                
+                const response = await fetch(API_URL, {
+                    method: 'GET',
+                    redirect: 'follow'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('HTTP error! status: ' + response.status);
+                }
+                
                 const data = await response.json();
                 
-                // Simpan dalam variable global
-                // Kita anggap data[0] adalah data sebenar, atau jika ada header kita boleh filter
-                // Untuk keselamatan, kita check structure
-                globalData = data; 
+                console.log('Raw data received:', data);
+                console.log('Headers (Row 1):', data[0]);
                 
-                renderTable();
-                showToast('Data berjaya dikemaskini', 'success');
-
+                if (data && data.length > 0) {
+                    headers = data[0];
+                    
+                    if (!headers.includes('LAPORAN')) {
+                        headers.push('LAPORAN');
+                    }
+                    
+                    students = data.slice(1).map(row => {
+                        let obj = {};
+                        headers.forEach((h, i) => {
+                            obj[h] = row[i] || '';
+                        });
+                        if (!obj['LAPORAN']) {
+                            obj['LAPORAN'] = '';
+                        }
+                        return obj;
+                    });
+                    
+                    console.log('Total students:', students.length);
+                    
+                    renderTable();
+                    updateBadge();
+                    showMessage('Data berjaya dimuatkan (' + students.length + ' murid)', 'success');
+                } else {
+                    showMessage('Tiada data ditemui dalam sheet', 'error');
+                }
             } catch (error) {
-                console.error(error);
-                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Gagal memuatkan data. Sila refresh.</td></tr>`;
-                showToast('Ralat sambungan server', 'error');
+                console.error('Load error:', error);
+                showMessage('Gagal memuatkan data: ' + error.message, 'error');
             }
         }
 
-        // 2. Paparkan Data ke Table
         function renderTable() {
             const tbody = document.getElementById('tableBody');
-            const countBadge = document.getElementById('recordCount');
             tbody.innerHTML = '';
+            
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filterT = document.getElementById('filterTingkatan').value;
+            const filterK = document.getElementById('filterKelas').value;
 
-            // Jika kosong
-            if (!globalData || globalData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400">Tiada rekod dijumpai.</td></tr>`;
-                countBadge.textContent = "0 Rekod";
+            laporanIndices = [];
+            
+            students.forEach(function(student, index) {
+                const matchSearch = !searchTerm || Object.values(student).some(function(val) {
+                    return String(val).toLowerCase().includes(searchTerm);
+                });
+                const matchTingkatan = !filterT || student['Darjah'] === filterT;
+                const matchKelas = !filterK || student['Nama Kelas'] === filterK;
+                
+                if (matchSearch && matchTingkatan && matchKelas) {
+                    const row = document.createElement('tr');
+                    row.dataset.index = index;
+                    
+                    if (student['LAPORAN'] && student['LAPORAN'].trim() !== '') {
+                        row.classList.add('highlighted');
+                        laporanIndices.push(index);
+                    }
+                    
+                    createCell(row, student['No'] || '', false, '', index);
+                    createCell(row, student['IC MURID'] || '', isAdmin, 'IC MURID', index);
+                    createCell(row, student['Nama Murid'] || '', isAdmin, 'Nama Murid', index);
+                    createCell(row, student['Darjah'] || '', false, '', index);
+                    createCell(row, student['Nama Kelas'] || '', false, '', index);
+                    createCell(row, student['Email (m-xxxx@moe-dl.edu.my)'] || '', isAdmin, 'Email (m-xxxx@moe-dl.edu.my)', index);
+                    createCell(row, student['Password'] || '', isAdmin, 'Password', index);
+                    
+                    const laporanCell = document.createElement('td');
+                    const laporanSelect = document.createElement('select');
+                    laporanSelect.className = 'laporan-select';
+                    laporanSelect.dataset.index = index;
+                    laporanSelect.onchange = function() { 
+                        updateLaporan(index, this.value); 
+                    };
+                    if (!isAdmin && student['LAPORAN']) {
+                        laporanSelect.disabled = true;
+                    }
+                    
+                    addOption(laporanSelect, '', '-', student['LAPORAN'] === '');
+                    addOption(laporanSelect, 'PASSWORD SALAH', 'PASSWORD SALAH', student['LAPORAN'] === 'PASSWORD SALAH');
+                    addOption(laporanSelect, 'IC SALAH', 'IC SALAH', student['LAPORAN'] === 'IC SALAH');
+                    addOption(laporanSelect, 'LAIN-LAIN', 'LAIN-LAIN', student['LAPORAN'] === 'LAIN-LAIN');
+                    
+                    laporanCell.appendChild(laporanSelect);
+                    row.appendChild(laporanCell);
+                    
+                    const actionCell = document.createElement('td');
+                    actionCell.className = 'admin-only';
+                    const btnPindah = document.createElement('button');
+                    btnPindah.className = 'btn-primary';
+                    btnPindah.textContent = 'Pindah';
+                    btnPindah.style.marginRight = '5px';
+                    btnPindah.style.padding = '6px 12px';
+                    btnPindah.onclick = function() { 
+                        openMoveModal(index); 
+                    };
+                    
+                    const btnPadam = document.createElement('button');
+                    btnPadam.className = 'btn-danger';
+                    btnPadam.textContent = 'Padam';
+                    btnPadam.style.padding = '6px 12px';
+                    btnPadam.onclick = function() { 
+                        deleteStudent(index); 
+                    };
+                    
+                    actionCell.appendChild(btnPindah);
+                    actionCell.appendChild(btnPadam);
+                    row.appendChild(actionCell);
+                    
+                    tbody.appendChild(row);
+                }
+            });
+
+            attachEditListeners();
+        }
+
+        function createCell(row, value, editable, field, index) {
+            const cell = document.createElement('td');
+            if (editable) {
+                const span = document.createElement('span');
+                span.className = 'editable';
+                span.contentEditable = 'true';
+                span.dataset.field = field;
+                span.dataset.index = index;
+                span.textContent = value;
+                cell.appendChild(span);
+            } else {
+                cell.textContent = value;
+            }
+            row.appendChild(cell);
+        }
+
+        function addOption(select, value, text, selected) {
+            const opt = document.createElement('option');
+            opt.value = value;
+            opt.textContent = text;
+            if (selected) opt.selected = true;
+            select.appendChild(opt);
+        }
+
+        function attachEditListeners() {
+            document.querySelectorAll('.editable').forEach(function(el) {
+                el.addEventListener('blur', function() {
+                    const field = this.dataset.field;
+                    const index = parseInt(this.dataset.index);
+                    const value = this.textContent.trim();
+                    students[index][field] = value;
+                });
+            });
+        }
+
+        function updateLaporan(index, value) {
+            students[index]['LAPORAN'] = value;
+            updateBadge();
+            renderTable();
+        }
+
+        function updateBadge() {
+            const count = students.filter(function(s) {
+                return s['LAPORAN'] && s['LAPORAN'].trim() !== '';
+            }).length;
+            const badge = document.getElementById('laporanBadge');
+            badge.textContent = count;
+            if (count > 0) {
+                badge.classList.add('show');
+            } else {
+                badge.classList.remove('show');
+            }
+        }
+
+        function scrollToFirstLaporan() {
+            const rows = Array.from(document.querySelectorAll('#tableBody tr'));
+            const firstLaporan = rows.find(function(row) {
+                return row.classList.contains('highlighted');
+            });
+            
+            if (firstLaporan) {
+                firstLaporan.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                firstLaporan.classList.add('flash');
+                setTimeout(function() {
+                    firstLaporan.classList.remove('flash');
+                }, 1000);
+                currentLaporanIndex = laporanIndices.indexOf(parseInt(firstLaporan.dataset.index));
+            }
+        }
+
+        function nextLaporan() {
+            if (laporanIndices.length === 0) {
+                showMessage('Tiada laporan untuk dilihat', 'error');
                 return;
             }
 
-            countBadge.textContent = `${globalData.length} Rekod`;
-
-            // Loop setiap data
-            // Nota: Index diterbalikkan supaya data baru (bawah sekali) nampak di atas? 
-            // Atau standard (0 ke atas). Kita guna standard 0 ke atas.
-            globalData.forEach((row, index) => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-blue-50 transition border-b border-gray-100 last:border-0";
-                
-                // Pastikan data wujud, jika tidak letak '-'
-                const nama = row[0] || '-';
-                const kelas = row[1] || '-';
-                const jantina = row[2] || '-';
-
-                // Warna badge jantina
-                const jantinaClass = jantina === 'Lelaki' 
-                    ? 'bg-blue-100 text-blue-700' 
-                    : (jantina === 'Perempuan' ? 'bg-pink-100 text-pink-700' : 'bg-gray-100 text-gray-600');
-
-                tr.innerHTML = `
-                    <td class="p-4 font-mono text-gray-500 text-xs">${index + 1}</td>
-                    <td class="p-4 font-semibold text-gray-700">${nama}</td>
-                    <td class="p-4 text-gray-600">${kelas}</td>
-                    <td class="p-4">
-                        <span class="text-xs px-2 py-1 rounded-full font-bold ${jantinaClass}">${jantina}</span>
-                    </td>
-                    <td class="p-4 text-center">
-                        <button onclick="deleteStudent(${index})" class="text-red-400 hover:text-red-600 transition" title="Padam">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        // 3. Tambah Data (Submit Form)
-        async function handleSubmit(e) {
-            e.preventDefault();
+            currentLaporanIndex = (currentLaporanIndex + 1) % laporanIndices.length;
+            const targetIndex = laporanIndices[currentLaporanIndex];
+            const targetRow = document.querySelector('tr[data-index="' + targetIndex + '"]');
             
-            const btn = document.getElementById('btnSubmit');
-            const originalBtnText = btn.innerHTML;
-            
-            // UI Loading state
-            btn.disabled = true;
-            btn.innerHTML = `<div class="loader border-white border-t-transparent w-4 h-4 mr-2"></div> Menyimpan...`;
-
-            // Ambil value dari form
-            const nama = document.getElementById('nama').value;
-            const kelas = document.getElementById('kelas').value;
-            const jantina = document.querySelector('input[name="jantina"]:checked')?.value;
-
-            // Masukkan data baru ke dalam array globalData
-            // Ini penting supaya kita hantar SEMUA data balik ke sheet (Sebab sheet akan overwrite)
-            const newData = [nama, kelas, jantina];
-            globalData.push(newData);
-
-            try {
-                // Hantar ke Apps Script (POST)
-                await sendDataToSheet(globalData);
-                
-                // Reset form jika berjaya
-                document.getElementById('studentForm').reset();
-                showToast('Murid berjaya ditambah!', 'success');
-                
-                // Render semula table dengan data baru
-                renderTable();
-
-            } catch (error) {
-                console.error(error);
-                showToast('Gagal menyimpan data.', 'error');
-                // Jika gagal, buang balik data yang baru push tadi dari memory
-                globalData.pop(); 
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalBtnText;
+            if (targetRow) {
+                targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                targetRow.classList.add('flash');
+                setTimeout(function() {
+                    targetRow.classList.remove('flash');
+                }, 1000);
             }
         }
 
-        // 4. Padam Data
-        async function deleteStudent(index) {
-            if(!confirm("Adakah anda pasti mahu memadam rekod ini?")) return;
+        function markAsResolved() {
+            if (laporanIndices.length === 0) {
+                showMessage('Tiada laporan untuk diselesaikan', 'error');
+                return;
+            }
 
-            // UI Feedback sementara menunggu
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = loadingRow;
+            if (currentLaporanIndex === -1 || currentLaporanIndex >= laporanIndices.length) {
+                currentLaporanIndex = 0;
+            }
 
-            // Buang dari array
-            globalData.splice(index, 1);
-
-            try {
-                await sendDataToSheet(globalData);
-                showToast('Rekod dipadam.', 'success');
-                renderTable();
-            } catch (error) {
-                showToast('Gagal memadam data.', 'error');
-                fetchData(); // Reload data asal jika error
+            const targetIndex = laporanIndices[currentLaporanIndex];
+            students[targetIndex]['LAPORAN'] = '';
+            
+            showMessage('Laporan telah diselesaikan', 'success');
+            
+            renderTable();
+            updateBadge();
+            
+            if (laporanIndices.length > 0) {
+                currentLaporanIndex = currentLaporanIndex % laporanIndices.length;
+                nextLaporan();
+            } else {
+                currentLaporanIndex = -1;
+                showMessage('Semua laporan telah selesai', 'success');
             }
         }
 
-        // 5. Fungsi Helper: Hantar ke API
-        async function sendDataToSheet(dataToSend) {
-            await fetch(apiUrl, {
-                method: 'POST',
-                redirect: "follow",
-                headers: { "Content-Type": "text/plain;charset=utf-8" },
-                body: JSON.stringify(dataToSend)
+        function toggleAdmin() {
+            if (!isAdmin) {
+                const password = prompt('Masukkan password admin:');
+                if (password === 'admin123') {
+                    isAdmin = true;
+                    document.body.classList.add('admin-mode');
+                    renderTable();
+                    showMessage('Mod Admin Diaktifkan', 'success');
+                } else if (password !== null) {
+                    showMessage('Password salah', 'error');
+                }
+            } else {
+                isAdmin = false;
+                document.body.classList.remove('admin-mode');
+                renderTable();
+                showMessage('Mod Admin Dimatikan', 'success');
+            }
+        }
+
+        function openMoveModal(index) {
+            moveTargetIndex = index;
+            document.getElementById('moveModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('moveModal').classList.remove('show');
+            moveTargetIndex = -1;
+        }
+
+        function confirmMove() {
+            if (moveTargetIndex === -1) return;
+            
+            const selected = document.getElementById('moveClassSelect').value;
+            const parts = selected.split('-');
+            const darjah = parts[0];
+            const kelas = parts[1];
+            
+            students[moveTargetIndex]['Darjah'] = darjah;
+            students[moveTargetIndex]['Nama Kelas'] = kelas;
+            
+            closeModal();
+            renderTable();
+            showMessage('Murid berjaya dipindahkan', 'success');
+        }
+
+        function deleteStudent(index) {
+            if (confirm('Adakah anda pasti mahu memadam murid ini?')) {
+                students.splice(index, 1);
+                renderTable();
+                updateBadge();
+                showMessage('Murid berjaya dipadam', 'success');
+            }
+        }
+
+        function autoPromote() {
+            if (!confirm('Auto naik kelas akan menaikkan semua murid dan memadam murid D6. Teruskan?')) {
+                return;
+            }
+
+            const promoted = [];
+            const removed = [];
+
+            students.forEach(function(student) {
+                const currentLevel = student['Darjah'];
+                if (currentLevel === 'D1') {
+                    student['Darjah'] = 'D2';
+                    promoted.push(student);
+                } else if (currentLevel === 'D2') {
+                    student['Darjah'] = 'D3';
+                    promoted.push(student);
+                } else if (currentLevel === 'D3') {
+                    student['Darjah'] = 'D4';
+                    promoted.push(student);
+                } else if (currentLevel === 'D4') {
+                    student['Darjah'] = 'D5';
+                    promoted.push(student);
+                } else if (currentLevel === 'D5') {
+                    student['Darjah'] = 'D6';
+                    promoted.push(student);
+                } else if (currentLevel === 'D6') {
+                    removed.push(student);
+                }
             });
+
+            students = students.filter(function(s) {
+                return s['Darjah'] !== 'D6' || removed.indexOf(s) === -1;
+            });
+
+            renderTable();
+            updateBadge();
+            showMessage('Auto naik kelas selesai. ' + promoted.length + ' murid dinaikkan, ' + removed.length + ' murid D6 dikeluarkan.', 'success');
         }
 
-        // 6. UI: Toast Notification
-        function showToast(msg, type = 'success') {
-            const toast = document.getElementById('toast');
-            const msgSpan = document.getElementById('toastMessage');
-            const iconSpan = document.getElementById('toastIcon');
+        async function saveToSheet() {
+            try {
+                const formData = new FormData();
+                
+                const dataRows = students.map(function(student) {
+                    return headers.map(function(h) {
+                        return student[h] || '';
+                    });
+                });
+                
+                formData.append('data', JSON.stringify(dataRows));
 
-            msgSpan.textContent = msg;
-            iconSpan.textContent = type === 'success' ? '✅' : '❌';
-            
-            // Show
-            toast.classList.remove('translate-y-20', 'opacity-0');
-            
-            // Hide after 3s
-            setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3000);
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    showMessage('Data berjaya disimpan ke Google Sheet', 'success');
+                } else {
+                    showMessage('Gagal menyimpan: ' + (result.message || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                showMessage('Ralat semasa menyimpan: ' + error.message, 'error');
+            }
         }
+
+        function downloadExcel() {
+            let csv = headers.join(',') + '\n';
+            
+            students.forEach(function(student) {
+                const row = headers.map(function(h) {
+                    const val = student[h] || '';
+                    return '"' + String(val).replace(/"/g, '""') + '"';
+                });
+                csv += row.join(',') + '\n';
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'ID_Delima_' + new Date().toISOString().split('T')[0] + '.csv');
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function showMessage(message, type) {
+            const msgEl = document.getElementById('statusMessage');
+            msgEl.textContent = message;
+            msgEl.className = 'status-message ' + type;
+            
+            setTimeout(function() {
+                msgEl.className = 'status-message';
+            }, 4000);
+        }
+
+        document.getElementById('searchInput').addEventListener('input', renderTable);
+        document.getElementById('filterTingkatan').addEventListener('change', renderTable);
+        document.getElementById('filterKelas').addEventListener('change', renderTable);
+        document.getElementById('bellIcon').addEventListener('click', scrollToFirstLaporan);
+        document.getElementById('adminIcon').addEventListener('click', toggleAdmin);
+        document.getElementById('btnAutoPromote').addEventListener('click', autoPromote);
+        document.getElementById('btnSave').addEventListener('click', saveToSheet);
+        document.getElementById('btnDownload').addEventListener('click', downloadExcel);
+        document.getElementById('btnNextLaporan').addEventListener('click', nextLaporan);
+        document.getElementById('btnMarkResolved').addEventListener('click', markAsResolved);
+        document.getElementById('btnConfirmMove').addEventListener('click', confirmMove);
+        document.getElementById('btnCancelMove').addEventListener('click', closeModal);
+
+        loadData();
     </script>
 </body>
 </html>
