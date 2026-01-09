@@ -466,7 +466,6 @@
 
     <script>
         // --- CONFIGURATION ---
-        // PENTING: Gantikan URL di bawah dengan URL Web App anda sendiri jika perlu
         const API_URL = "https://script.google.com/macros/s/AKfycbxZVnrpcL_2dCx7PPQCA07Q6j3GLN_0xyCqgLazLsJ0yaOD6uLeScf1w1GkAyFKzPG7VQ/exec";
         
         // --- STATE ---
@@ -494,13 +493,23 @@
         async function fetchData() {
             showLoading(true, "Sedang mengambil data...");
             try {
+                // 1. Fetch data
                 const response = await fetch(API_URL);
-                if (!response.ok) throw new Error("Network response was not ok");
                 
-                rawData = await response.json();
+                // 2. Get text first to debug HTML responses (which mean permission errors)
+                const textData = await response.text();
+                
+                try {
+                    // 3. Try parsing JSON
+                    rawData = JSON.parse(textData);
+                } catch (e) {
+                    // If parsing fails, it's likely an HTML error page from Google (Permission Denied)
+                    console.error("Non-JSON response received:", textData);
+                    throw new Error("Isu Akses: Sila set 'Who has access' kepada 'Anyone' di Google Script Deployment.");
+                }
                 
                 if (!rawData || rawData.length === 0) {
-                    showToast("Tiada data diterima");
+                    showToast("Tiada data diterima atau sheet kosong.");
                     return;
                 }
 
@@ -509,7 +518,8 @@
                 updateBadge(); // Calculate badge on load
             } catch (error) {
                 console.error("Error fetching data:", error);
-                showToast("Gagal mengambil data. Sila refresh.");
+                alert("Ralat Load Data:\n" + error.message);
+                showToast("Gagal mengambil data.");
             } finally {
                 showLoading(false);
             }
@@ -821,10 +831,16 @@
             formData.append('data', JSON.stringify(finalData));
 
             try {
-                await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: formData });
+                // Check if API_URL has changed from the one that was fetched
+                // If permission error, even POST might fail or return HTML
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // no-cors is standard for apps script post, but debugging is hard
+                    body: formData
+                });
+                
                 showLoading(false);
                 alert("✅ Berjaya disimpan!\n\nPerubahan akan dilihat dalam masa beberapa saat.");
-                // Jika public user hantar report, kita refresh untuk pastikan mereka nampak status terkini
                 if(!isAdmin) setTimeout(() => fetchData(), 3000);
             } catch (error) {
                 console.error("Save error:", error);
