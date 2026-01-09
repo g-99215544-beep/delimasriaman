@@ -3,863 +3,349 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Semak & Edit ID Delima Murid - SK Sri Aman</title>
+    <title>Sistem Rekod Murid</title>
+    <!-- Tailwind CSS untuk styling pantas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary: #2563eb;
-            --secondary: #1e40af;
-            --accent: #d97706;
-            --danger: #dc2626;
-            --success: #16a34a;
-            --bg: #f3f4f6;
-            --text: #1f2937;
-            --border: #e5e7eb;
-            --white: #ffffff;
-            --warning-bg: #fef2f2;
-            --warning-border: #fca5a5;
-        }
-
-        * {
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg);
-            color: var(--text);
-            font-size: 14px;
-        }
-
-        /* --- Header --- */
-        header {
-            background-color: var(--primary);
-            color: var(--white);
-            padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .brand {
-            font-weight: bold;
-            font-size: 1.1rem;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .brand span {
-            font-size: 0.8rem;
-            opacity: 0.9;
-            font-weight: normal;
-        }
-
-        /* Admin Button & Badge Wrapper */
-        .admin-btn-wrapper {
-            position: relative;
-            display: inline-block;
-        }
-
-        .admin-btn {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 5px;
+        body { font-family: 'Inter', sans-serif; }
+        .loader {
+            border: 3px solid #f3f3f3;
             border-radius: 50%;
-            transition: background 0.2s;
-        }
-
-        .admin-btn:hover {
-            background-color: rgba(255,255,255,0.2);
-        }
-
-        /* Badge Notification Style */
-        .badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background-color: var(--danger);
-            color: white;
-            border-radius: 50%;
-            padding: 2px 6px;
-            font-size: 11px;
-            font-weight: bold;
-            border: 2px solid var(--primary);
-            display: none; /* Hidden by default */
-            z-index: 101;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        .badge.show { display: block; }
-
-        /* --- Controls --- */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 1rem;
-        }
-
-        .controls {
-            background: var(--white);
-            padding: 1rem;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            margin-bottom: 1rem;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .search-box {
-            flex: 1;
-            min-width: 200px;
-            position: relative;
-        }
-
-        input, select, button {
-            padding: 0.5rem 0.75rem;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            font-size: 14px;
-            outline: none;
-        }
-
-        input:focus, select:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
-        }
-
-        .search-box input {
-            width: 100%;
-        }
-
-        /* --- Action Buttons --- */
-        .btn {
-            cursor: pointer;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            transition: opacity 0.2s;
-            border: none;
-            color: white;
-        }
-
-        .btn:hover { opacity: 0.9; }
-        
-        .btn-save { background-color: var(--success); }
-        .btn-export { background-color: var(--secondary); }
-        .btn-promo { background-color: var(--accent); }
-        .btn-report { background-color: var(--danger); } 
-        .btn-move { background-color: var(--primary); font-size: 12px; padding: 4px 8px; }
-        .btn-del { background-color: var(--danger); font-size: 12px; padding: 4px 8px; }
-
-        /* Visibility Classes */
-        .admin-only { display: none !important; }
-        body.is-admin .admin-only { display: inline-flex !important; }
-        body.is-admin .admin-col { display: table-cell !important; }
-
-        .public-only { display: inline-flex; }
-        body.is-admin .public-only { display: none; }
-
-        /* --- Table --- */
-        .table-container {
-            background: var(--white);
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            overflow-x: auto;
-            min-height: 400px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            white-space: nowrap;
-        }
-
-        th, td {
-            padding: 0.75rem 1rem;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-            vertical-align: middle;
-        }
-
-        th {
-            background-color: #f8fafc;
-            font-weight: 600;
-            color: var(--text);
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        tr:hover {
-            background-color: #f1f5f9;
-        }
-
-        /* Row styles for reported issues */
-        tr.has-issue {
-            background-color: var(--warning-bg);
-        }
-        tr.has-issue td {
-            border-bottom-color: var(--warning-border);
-        }
-
-        .editable-cell {
-            transition: background 0.2s;
-        }
-
-        body.is-admin .editable-cell:hover {
-            background-color: #fffbeb;
-            cursor: text;
-            outline: 1px dashed var(--accent);
-        }
-        
-        body.is-admin .editable-cell:focus {
-            background-color: #fff;
-            outline: 2px solid var(--primary);
-        }
-
-        /* Report Dropdown Style */
-        .report-select {
-            padding: 4px;
-            font-size: 12px;
-            border-color: #ccc;
-            background: white;
-            color: #333;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .report-select.active {
-            border-color: var(--danger);
-            color: var(--danger);
-            font-weight: bold;
-            background-color: #fff5f5;
-        }
-
-        /* --- Modals --- */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .modal {
-            background: var(--white);
-            padding: 1.5rem;
-            border-radius: 8px;
-            width: 90%;
-            max-width: 400px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .modal h3 { margin-top: 0; }
-
-        .modal-actions {
-            margin-top: 1.5rem;
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-        }
-
-        .btn-cancel {
-            background-color: #9ca3af;
-            color: white;
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
-
-        .form-group select, .form-group input {
-            width: 100%;
-        }
-
-        /* --- Notification & Loading --- */
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #333;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 4px;
-            z-index: 2000;
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-        }
-        .toast.show { opacity: 1; }
-
-        .loading-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255,255,255,0.8);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-            font-weight: bold;
-            color: var(--primary);
-        }
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--primary);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            border-top: 3px solid #3b82f6;
+            width: 20px;
+            height: 20px;
+            -webkit-animation: spin 1s linear infinite; /* Safari */
             animation: spin 1s linear infinite;
-            margin-bottom: 10px;
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        @media (max-width: 768px) {
-            .controls { flex-direction: column; align-items: stretch; }
-            .btn { width: 100%; justify-content: center; margin-bottom: 5px; }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
-<body>
+<body class="bg-slate-100 text-slate-800">
 
-    <!-- Loading Screen -->
-    <div id="loading" class="loading-overlay">
-        <div class="spinner"></div>
-        <div id="loadingText">Sedang memuat data...</div>
+    <!-- Konfigurasi URL API di sini -->
+    <input type="hidden" id="apiUrl" value="https://script.google.com/macros/s/AKfycbyxJhuyvjSdxCjctc983FS1oj3APQitMjIKUMAd7MEMeIaEnL5gUgVinOBfrVd_D4129Q/exec">
+
+    <!-- Header -->
+    <nav class="bg-blue-700 text-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                <h1 class="text-xl font-bold tracking-wide">Sistem Rekod Murid</h1>
+            </div>
+            <button onclick="fetchData()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-sm flex items-center gap-2 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Refresh
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Left Column: Form Tambah -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-xl shadow-md p-6 sticky top-24">
+                <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-blue-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    </svg>
+                    Tambah Murid Baru
+                </h2>
+                
+                <form id="studentForm" onsubmit="handleSubmit(event)">
+                    <!-- Nama -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold mb-2 text-gray-600">Nama Penuh</label>
+                        <input type="text" id="nama" required 
+                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50"
+                            placeholder="Contoh: Ali bin Abu">
+                    </div>
+
+                    <!-- Kelas -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold mb-2 text-gray-600">Kelas</label>
+                        <select id="kelas" required 
+                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50">
+                            <option value="" disabled selected>Pilih Kelas</option>
+                            <option value="1 Arif">1 Arif</option>
+                            <option value="1 Bestari">1 Bestari</option>
+                            <option value="2 Cerdik">2 Cerdik</option>
+                            <option value="2 Dedikasi">2 Dedikasi</option>
+                            <option value="3 Efisien">3 Efisien</option>
+                            <option value="4 Fikir">4 Fikir</option>
+                            <option value="5 Gemilang">5 Gemilang</option>
+                        </select>
+                    </div>
+
+                    <!-- Jantina -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold mb-2 text-gray-600">Jantina</label>
+                        <div class="flex gap-4">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="jantina" value="Lelaki" required class="text-blue-600 focus:ring-blue-500">
+                                <span class="text-sm">Lelaki</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="jantina" value="Perempuan" required class="text-pink-600 focus:ring-pink-500">
+                                <span class="text-sm">Perempuan</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Butang Submit -->
+                    <button type="submit" id="btnSubmit" 
+                        class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded-lg shadow transition flex justify-center items-center gap-2">
+                        <span>Simpan Data</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Right Column: Senarai Data -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-gray-700 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                        </svg>
+                        Senarai Murid
+                    </h2>
+                    <span id="recordCount" class="text-xs font-semibold bg-blue-100 text-blue-800 px-2 py-1 rounded-full">0 Rekod</span>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-100 text-slate-600 uppercase text-xs font-semibold">
+                            <tr>
+                                <th class="p-4 border-b w-10">No</th>
+                                <th class="p-4 border-b">Nama Murid</th>
+                                <th class="p-4 border-b">Kelas</th>
+                                <th class="p-4 border-b">Jantina</th>
+                                <th class="p-4 border-b text-center w-20">Tindakan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody" class="text-sm">
+                            <!-- Data akan dimasukkan di sini oleh JavaScript -->
+                            <tr>
+                                <td colspan="5" class="p-8 text-center text-gray-500">
+                                    <div class="flex flex-col items-center justify-center">
+                                        <div class="loader mb-2"></div>
+                                        <p>Sedang memuatkan data...</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Toast Notification -->
-    <div id="toast" class="toast">Mesej sistem</div>
-
-    <header>
-        <div class="brand">
-            Sistem Semak & Edit ID Delima
-            <span>SK Sri Aman</span>
-        </div>
-        
-        <div class="admin-btn-wrapper">
-            <button class="admin-btn" onclick="openAdminLogin()" title="Admin Login">⚙️</button>
-            <div id="adminBadge" class="badge">0</div>
-        </div>
-    </header>
-
-    <div class="container">
-        
-        <!-- Controls Bar -->
-        <div class="controls">
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="Cari Nama, IC, ID, dll..." onkeyup="handleSearch()">
-            </div>
-            
-            <select id="filterTingkatan" onchange="applyFilters()">
-                <option value="">Semua Tingkatan</option>
-                <option value="D1">D1</option>
-                <option value="D2">D2</option>
-                <option value="D3">D3</option>
-                <option value="D4">D4</option>
-                <option value="D5">D5</option>
-                <option value="D6">D6</option>
-            </select>
-
-            <select id="filterKelas" onchange="applyFilters()">
-                <option value="">Semua Kelas</option>
-                <option value="BESTARI">BESTARI</option>
-                <option value="CEMERLANG">CEMERLANG</option>
-                <option value="GEMILANG">GEMILANG</option>
-            </select>
-
-            <!-- Public User Action: Only show when NOT admin -->
-            <button class="btn btn-report public-only" onclick="saveData()">📩 Hantar Laporan</button>
-        </div>
-
-        <!-- Admin Action Bar -->
-        <div class="controls admin-only" style="background: #eef2ff; border: 1px solid #c7d2fe;">
-            <div style="font-weight: bold; color: var(--secondary); margin-right: auto;">MOD ADMIN</div>
-            <button class="btn btn-promo" onclick="autoPromote()">🚀 Auto Naik Kelas</button>
-            <button class="btn btn-export" onclick="downloadExcel()">⬇ Download Excel</button>
-            <button class="btn btn-save" onclick="saveData()">☁️ Simpan Semua Perubahan</button>
-        </div>
-
-        <!-- Data Table -->
-        <div class="table-container">
-            <table id="dataTable">
-                <thead>
-                    <tr id="tableHeader">
-                        <!-- Headers generated via JS -->
-                    </tr>
-                </thead>
-                <tbody id="tableBody">
-                    <!-- Rows generated via JS -->
-                </tbody>
-            </table>
-        </div>
-        <div id="noData" style="text-align: center; padding: 2rem; color: #666; display: none;">Tiada rekod dijumpai.</div>
-
-    </div>
-
-    <!-- Admin Login Modal -->
-    <div id="modalLogin" class="modal-overlay">
-        <div class="modal">
-            <h3>Login Pentadbir</h3>
-            <div class="form-group">
-                <label>Kata Laluan</label>
-                <input type="password" id="adminPassword" placeholder="Masukkan password">
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-cancel" onclick="closeModal('modalLogin')">Batal</button>
-                <button class="btn btn-move" onclick="checkLogin()">Masuk</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Move Class Modal -->
-    <div id="modalMove" class="modal-overlay">
-        <div class="modal">
-            <h3>Pindah Kelas</h3>
-            <p id="moveStudentName" style="color: #666; margin-bottom: 1rem;"></p>
-            <input type="hidden" id="moveStudentId">
-            
-            <div class="form-group">
-                <label>Tingkatan Baru</label>
-                <select id="newTingkatan">
-                    <option value="D1">D1</option>
-                    <option value="D2">D2</option>
-                    <option value="D3">D3</option>
-                    <option value="D4">D4</option>
-                    <option value="D5">D5</option>
-                    <option value="D6">D6</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label>Kelas Baru</label>
-                <select id="newKelas">
-                    <option value="BESTARI">BESTARI</option>
-                    <option value="CEMERLANG">CEMERLANG</option>
-                    <option value="GEMILANG">GEMILANG</option>
-                </select>
-            </div>
-
-            <div class="modal-actions">
-                <button class="btn btn-cancel" onclick="closeModal('modalMove')">Batal</button>
-                <button class="btn btn-move" onclick="confirmMove()">Simpan Pindah</button>
-            </div>
+    <div id="toast" class="fixed bottom-5 right-5 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <div class="bg-gray-800 text-white px-6 py-3 rounded-lg shadow-xl flex items-center gap-3">
+            <span id="toastIcon">✅</span>
+            <span id="toastMessage">Operasi Berjaya</span>
         </div>
     </div>
 
     <script>
-        // --- CONFIGURATION ---
-        const API_URL = "https://script.google.com/macros/s/AKfycbxZVnrpcL_2dCx7PPQCA07Q6j3GLN_0xyCqgLazLsJ0yaOD6uLeScf1w1GkAyFKzPG7VQ/exec";
-        
-        // --- STATE ---
-        let rawData = [];
-        let headers = []; 
-        let tableData = []; 
-        let isAdmin = false;
+        // --- GLOBAL VARIABLES ---
+        let globalData = []; // Menyimpan data murid di memori
+        const apiUrl = document.getElementById('apiUrl').value;
+        const loadingRow = `
+            <tr>
+                <td colspan="5" class="p-8 text-center text-gray-500">
+                    <div class="flex flex-col items-center justify-center">
+                        <div class="loader mb-2"></div>
+                        <p>Sedang memuatkan data...</p>
+                    </div>
+                </td>
+            </tr>`;
 
-        // Column Mapping
-        let colMap = {
-            nama: -1,
-            ic: -1,
-            email: -1, 
-            password: -1,
-            tingkatan: -1,
-            kelas: -1,
-            laporan: -1 // New column for Issue Report
-        };
-
-        // --- INITIALIZATION ---
-        window.onload = function() {
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', () => {
             fetchData();
-        };
+        });
 
+        // --- FUNCTIONS ---
+
+        // 1. Ambil Data (GET)
         async function fetchData() {
-            showLoading(true, "Sedang mengambil data...");
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = loadingRow;
+
             try {
-                // 1. Fetch data
-                const response = await fetch(API_URL);
+                const response = await fetch(apiUrl);
+                const data = await response.json();
                 
-                // 2. Get text first to debug HTML responses (which mean permission errors)
-                const textData = await response.text();
+                // Simpan dalam variable global
+                // Kita anggap data[0] adalah data sebenar, atau jika ada header kita boleh filter
+                // Untuk keselamatan, kita check structure
+                globalData = data; 
                 
-                try {
-                    // 3. Try parsing JSON
-                    rawData = JSON.parse(textData);
-                } catch (e) {
-                    // If parsing fails, it's likely an HTML error page from Google (Permission Denied)
-                    console.error("Non-JSON response received:", textData);
-                    throw new Error("Isu Akses: Sila set 'Who has access' kepada 'Anyone' di Google Script Deployment.");
-                }
-                
-                if (!rawData || rawData.length === 0) {
-                    showToast("Tiada data diterima atau sheet kosong.");
-                    return;
-                }
-
-                processData(rawData);
                 renderTable();
-                updateBadge(); // Calculate badge on load
+                showToast('Data berjaya dikemaskini', 'success');
+
             } catch (error) {
-                console.error("Error fetching data:", error);
-                alert("Ralat Load Data:\n" + error.message);
-                showToast("Gagal mengambil data.");
-            } finally {
-                showLoading(false);
+                console.error(error);
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Gagal memuatkan data. Sila refresh.</td></tr>`;
+                showToast('Ralat sambungan server', 'error');
             }
         }
 
-        function processData(data) {
-            // Extract headers (Row 0)
-            headers = data[0].map(h => (h || "").toString().trim());
-            
-            // Map columns intelligently
-            headers.forEach((h, index) => {
-                const lower = h.toLowerCase();
-                if (lower.includes("nama") && lower.includes("murid")) colMap.nama = index;
-                else if (lower.includes("ic") || lower.includes("kp")) colMap.ic = index;
-                else if (lower.includes("id") || lower.includes("email")) colMap.email = index;
-                else if (lower.includes("password") || lower.includes("laluan")) colMap.password = index;
-                else if (lower.includes("tingkatan") || lower.includes("darjah")) colMap.tingkatan = index;
-                else if (lower.includes("kelas")) colMap.kelas = index;
-                else if (lower.includes("laporan") || lower.includes("masalah") || lower.includes("catatan")) colMap.laporan = index;
-            });
-
-            // LOGIC: If 'Laporan' column doesn't exist, create it locally
-            if (colMap.laporan === -1) {
-                headers.push("Laporan Masalah");
-                colMap.laporan = headers.length - 1;
-            }
-
-            // Convert rows
-            tableData = [];
-            for (let i = 1; i < data.length; i++) {
-                let row = data[i];
-                // Fill missing columns
-                while (row.length < headers.length) row.push("");
-                
-                let rowObj = {
-                    _originalIndex: i,
-                    data: [...row]
-                };
-                tableData.push(rowObj);
-            }
-        }
-
-        // --- RENDERING ---
+        // 2. Paparkan Data ke Table
         function renderTable() {
-            const tbody = document.getElementById("tableBody");
-            const thead = document.getElementById("tableHeader");
-            const filterTing = document.getElementById("filterTingkatan").value;
-            const filterKls = document.getElementById("filterKelas").value;
-            const searchTxt = document.getElementById("searchInput").value.toLowerCase();
+            const tbody = document.getElementById('tableBody');
+            const countBadge = document.getElementById('recordCount');
+            tbody.innerHTML = '';
 
-            tbody.innerHTML = "";
-            thead.innerHTML = ""; // Clear header to rebuild
-            
-            // Render Headers
-            headers.forEach(h => {
-                const th = document.createElement("th");
-                th.textContent = h;
-                thead.appendChild(th);
-            });
-            // Admin Action Column
-            const thAct = document.createElement("th");
-            thAct.textContent = "Aksi";
-            thAct.className = "admin-only admin-col";
-            thead.appendChild(thAct);
+            // Jika kosong
+            if (!globalData || globalData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400">Tiada rekod dijumpai.</td></tr>`;
+                countBadge.textContent = "0 Rekod";
+                return;
+            }
 
-            // Filter Logic
-            let visibleCount = 0;
-            tableData.forEach((rowObj, index) => {
-                const row = rowObj.data;
-                const tingkatan = colMap.tingkatan > -1 ? row[colMap.tingkatan] : "";
-                const kelas = colMap.kelas > -1 ? row[colMap.kelas] : "";
+            countBadge.textContent = `${globalData.length} Rekod`;
+
+            // Loop setiap data
+            // Nota: Index diterbalikkan supaya data baru (bawah sekali) nampak di atas? 
+            // Atau standard (0 ke atas). Kita guna standard 0 ke atas.
+            globalData.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-blue-50 transition border-b border-gray-100 last:border-0";
                 
-                // Filters
-                if (filterTing && tingkatan !== filterTing) return;
-                if (filterKls && kelas !== filterKls) return;
+                // Pastikan data wujud, jika tidak letak '-'
+                const nama = row[0] || '-';
+                const kelas = row[1] || '-';
+                const jantina = row[2] || '-';
 
-                // Search
-                const rowStr = row.join(" ").toLowerCase();
-                if (searchTxt && !rowStr.includes(searchTxt)) return;
+                // Warna badge jantina
+                const jantinaClass = jantina === 'Lelaki' 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : (jantina === 'Perempuan' ? 'bg-pink-100 text-pink-700' : 'bg-gray-100 text-gray-600');
 
-                visibleCount++;
-                const tr = document.createElement("tr");
-                tr.dataset.idx = index;
-
-                // Highlight if there is a report
-                const reportVal = colMap.laporan > -1 ? row[colMap.laporan] : "";
-                if (reportVal && reportVal.trim() !== "") {
-                    tr.classList.add("has-issue");
-                }
-
-                row.forEach((cellVal, colIdx) => {
-                    const td = document.createElement("td");
-                    
-                    // --- SPECIAL RENDERING FOR REPORT COLUMN ---
-                    if (colIdx === colMap.laporan) {
-                        // Dropdown for everyone
-                        const select = document.createElement("select");
-                        select.className = "report-select";
-                        if (cellVal && cellVal.trim() !== "") select.classList.add("active");
-                        
-                        const options = ["", "Salah ID", "Salah Password", "Salah IC", "Lain-lain"];
-                        options.forEach(opt => {
-                            const el = document.createElement("option");
-                            el.value = opt;
-                            el.textContent = opt === "" ? "Tiada Masalah" : opt;
-                            if (opt === cellVal) el.selected = true;
-                            el.appendChild(el);
-                            select.appendChild(el);
-                        });
-
-                        select.onchange = function() {
-                            updateCell(index, colIdx, this.value);
-                            // Update style immediately
-                            if(this.value) {
-                                this.classList.add("active");
-                                tr.classList.add("has-issue");
-                            } else {
-                                this.classList.remove("active");
-                                tr.classList.remove("has-issue");
-                            }
-                            updateBadge(); // Update badge count locally
-                        };
-
-                        td.appendChild(select);
-                    } 
-                    // --- NORMAL COLUMNS ---
-                    else {
-                        td.textContent = cellVal;
-                        if (isAdmin) {
-                            td.contentEditable = "true";
-                            td.classList.add("editable-cell");
-                            td.onblur = function() {
-                                updateCell(index, colIdx, this.textContent);
-                            };
-                        }
-                    }
-                    tr.appendChild(td);
-                });
-
-                // Admin Actions Column (Pindah/Delete)
-                const tdAction = document.createElement("td");
-                tdAction.className = "admin-only admin-col";
-                tdAction.style.whiteSpace = "nowrap";
-                
-                const btnMove = document.createElement("button");
-                btnMove.className = "btn btn-move";
-                btnMove.textContent = "Pindah";
-                btnMove.onclick = () => openMoveModal(index);
-                
-                const btnDel = document.createElement("button");
-                btnDel.className = "btn btn-del";
-                btnDel.textContent = "Hapus";
-                btnDel.style.marginLeft = "5px";
-                btnDel.onclick = () => deleteStudent(index);
-
-                tdAction.appendChild(btnMove);
-                tdAction.appendChild(btnDel);
-                tr.appendChild(tdAction);
-
+                tr.innerHTML = `
+                    <td class="p-4 font-mono text-gray-500 text-xs">${index + 1}</td>
+                    <td class="p-4 font-semibold text-gray-700">${nama}</td>
+                    <td class="p-4 text-gray-600">${kelas}</td>
+                    <td class="p-4">
+                        <span class="text-xs px-2 py-1 rounded-full font-bold ${jantinaClass}">${jantina}</span>
+                    </td>
+                    <td class="p-4 text-center">
+                        <button onclick="deleteStudent(${index})" class="text-red-400 hover:text-red-600 transition" title="Padam">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </td>
+                `;
                 tbody.appendChild(tr);
             });
-
-            document.getElementById("noData").style.display = visibleCount === 0 ? "block" : "none";
         }
 
-        // --- BADGE LOGIC ---
-        function updateBadge() {
-            if (colMap.laporan === -1) return;
+        // 3. Tambah Data (Submit Form)
+        async function handleSubmit(e) {
+            e.preventDefault();
             
-            // Count rows where Laporan column is NOT empty
-            const issueCount = tableData.filter(r => r.data[colMap.laporan] && r.data[colMap.laporan].trim() !== "").length;
+            const btn = document.getElementById('btnSubmit');
+            const originalBtnText = btn.innerHTML;
             
-            const badge = document.getElementById("adminBadge");
-            if (issueCount > 0) {
-                badge.textContent = issueCount;
-                badge.classList.add("show");
-            } else {
-                badge.classList.remove("show");
-            }
-        }
+            // UI Loading state
+            btn.disabled = true;
+            btn.innerHTML = `<div class="loader border-white border-t-transparent w-4 h-4 mr-2"></div> Menyimpan...`;
 
-        // --- CORE FEATURES ---
+            // Ambil value dari form
+            const nama = document.getElementById('nama').value;
+            const kelas = document.getElementById('kelas').value;
+            const jantina = document.querySelector('input[name="jantina"]:checked')?.value;
 
-        function handleSearch() { renderTable(); }
-        function applyFilters() { renderTable(); }
-
-        function updateCell(rowIndex, colIndex, newValue) {
-            tableData[rowIndex].data[colIndex] = newValue.trim();
-        }
-
-        // --- ADMIN SYSTEM ---
-
-        function openAdminLogin() {
-            if (isAdmin) {
-                if(confirm("Log keluar admin?")) {
-                    isAdmin = false;
-                    document.body.classList.remove("is-admin");
-                    renderTable();
-                    showToast("Admin log keluar berjaya");
-                }
-            } else {
-                document.getElementById("modalLogin").style.display = "flex";
-                document.getElementById("adminPassword").value = "";
-                document.getElementById("adminPassword").focus();
-            }
-        }
-
-        function checkLogin() {
-            const pass = document.getElementById("adminPassword").value;
-            if (pass === "admin123") {
-                isAdmin = true;
-                document.body.classList.add("is-admin");
-                closeModal("modalLogin");
-                renderTable();
-                showToast("Mod Admin Diaktifkan");
-            } else {
-                alert("Password salah!");
-            }
-        }
-
-        // --- ACTION LOGIC ---
-
-        let currentMoveIndex = -1;
-        function openMoveModal(index) { 
-            currentMoveIndex = index;
-            const name = tableData[index].data[colMap.nama];
-            const ting = tableData[index].data[colMap.tingkatan];
-            const kls = tableData[index].data[colMap.kelas];
-            document.getElementById("moveStudentName").textContent = "Murid: " + name;
-            const tSelect = document.getElementById("newTingkatan");
-            const kSelect = document.getElementById("newKelas");
-            if(Array.from(tSelect.options).some(o => o.value === ting)) tSelect.value = ting; else tSelect.selectedIndex = 0;
-            if(Array.from(kSelect.options).some(o => o.value === kls)) kSelect.value = kls; else kSelect.selectedIndex = 0;
-            document.getElementById("modalMove").style.display = "flex";
-        }
-
-        function confirmMove() {
-            if (currentMoveIndex === -1) return;
-            const newTing = document.getElementById("newTingkatan").value;
-            const newKls = document.getElementById("newKelas").value;
-            if (colMap.tingkatan > -1) tableData[currentMoveIndex].data[colMap.tingkatan] = newTing;
-            if (colMap.kelas > -1) tableData[currentMoveIndex].data[colMap.kelas] = newKls;
-            closeModal("modalMove");
-            renderTable();
-            showToast("Murid berjaya dipindah.");
-        }
-
-        function deleteStudent(index) {
-            const name = tableData[index].data[colMap.nama];
-            if (confirm(`Adakah anda pasti mahu memadam murid ini?\n\n${name}`)) {
-                tableData.splice(index, 1);
-                renderTable();
-                showToast("Murid dipadam.");
-            }
-        }
-
-        function autoPromote() {
-            if (!confirm("AMARAN: Ini akan menaikkan semua murid 1 tahun (Cth: D1->D2) dan MEMADAM semua murid D6.\n\nAdakah anda pasti?")) return;
-            if (colMap.tingkatan === -1) { alert("Ralat: Kolum 'Tingkatan' tidak dijumpai."); return; }
-            let promotedCount = 0; let removedCount = 0; const newTableData = [];
-            tableData.forEach(rowObj => {
-                let currentTing = rowObj.data[colMap.tingkatan].toUpperCase().trim();
-                let match = currentTing.match(/D(\d)/);
-                if (match) {
-                    let level = parseInt(match[1]);
-                    if (level < 6) {
-                        let newLevel = level + 1;
-                        rowObj.data[colMap.tingkatan] = "D" + newLevel;
-                        newTableData.push(rowObj);
-                        promotedCount++;
-                    } else if (level === 6) { removedCount++; } else { newTableData.push(rowObj); }
-                } else { newTableData.push(rowObj); }
-            });
-            tableData = newTableData;
-            renderTable();
-            alert(`Proses Selesai.\n\nMurid Dinaikkan: ${promotedCount}\nMurid D6 Dipadam: ${removedCount}\n\nSila tekan 'Simpan' untuk kekalkan perubahan.`);
-        }
-
-        function downloadExcel() {
-            let csvContent = "\uFEFF" + headers.join(",") + "\n";
-            tableData.forEach(rowObj => {
-                let row = rowObj.data.map(e => {
-                    let cell = String(e || "").replace(/"/g, '""');
-                    if (cell.search(/("|,|\n)/g) >= 0) cell = `"${cell}"`;
-                    return cell;
-                });
-                csvContent += row.join(",") + "\n";
-            });
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.setAttribute("href", url);
-            link.setAttribute("download", "Data_ID_Delima.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        async function saveData() {
-            let msg = isAdmin ? "Simpan perubahan ke Google Sheet?" : "Hantar laporan masalah ke sistem?";
-            if (!confirm(msg)) return;
-
-            showLoading(true, "Sedang menyimpan...");
-            // Reconstruct full data with headers
-            const finalData = [headers];
-            tableData.forEach(rowObj => finalData.push(rowObj.data));
-            
-            const formData = new FormData();
-            formData.append('data', JSON.stringify(finalData));
+            // Masukkan data baru ke dalam array globalData
+            // Ini penting supaya kita hantar SEMUA data balik ke sheet (Sebab sheet akan overwrite)
+            const newData = [nama, kelas, jantina];
+            globalData.push(newData);
 
             try {
-                // Check if API_URL has changed from the one that was fetched
-                // If permission error, even POST might fail or return HTML
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors', // no-cors is standard for apps script post, but debugging is hard
-                    body: formData
-                });
+                // Hantar ke Apps Script (POST)
+                await sendDataToSheet(globalData);
                 
-                showLoading(false);
-                alert("✅ Berjaya disimpan!\n\nPerubahan akan dilihat dalam masa beberapa saat.");
-                if(!isAdmin) setTimeout(() => fetchData(), 3000);
+                // Reset form jika berjaya
+                document.getElementById('studentForm').reset();
+                showToast('Murid berjaya ditambah!', 'success');
+                
+                // Render semula table dengan data baru
+                renderTable();
+
             } catch (error) {
-                console.error("Save error:", error);
-                showLoading(false);
-                alert("Ralat sambungan: " + error.message);
+                console.error(error);
+                showToast('Gagal menyimpan data.', 'error');
+                // Jika gagal, buang balik data yang baru push tadi dari memory
+                globalData.pop(); 
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalBtnText;
             }
         }
 
-        function closeModal(id) { document.getElementById(id).style.display = "none"; }
-        function showLoading(show, text) {
-            const el = document.getElementById("loading");
-            document.getElementById("loadingText").textContent = text || "Loading...";
-            el.style.display = show ? "flex" : "none";
+        // 4. Padam Data
+        async function deleteStudent(index) {
+            if(!confirm("Adakah anda pasti mahu memadam rekod ini?")) return;
+
+            // UI Feedback sementara menunggu
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = loadingRow;
+
+            // Buang dari array
+            globalData.splice(index, 1);
+
+            try {
+                await sendDataToSheet(globalData);
+                showToast('Rekod dipadam.', 'success');
+                renderTable();
+            } catch (error) {
+                showToast('Gagal memadam data.', 'error');
+                fetchData(); // Reload data asal jika error
+            }
         }
-        function showToast(msg) {
-            const t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show");
-            setTimeout(() => t.classList.remove("show"), 3000);
+
+        // 5. Fungsi Helper: Hantar ke API
+        async function sendDataToSheet(dataToSend) {
+            await fetch(apiUrl, {
+                method: 'POST',
+                redirect: "follow",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify(dataToSend)
+            });
         }
-        window.onclick = function(event) { if (event.target.classList.contains('modal-overlay')) event.target.style.display = "none"; }
+
+        // 6. UI: Toast Notification
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            const msgSpan = document.getElementById('toastMessage');
+            const iconSpan = document.getElementById('toastIcon');
+
+            msgSpan.textContent = msg;
+            iconSpan.textContent = type === 'success' ? '✅' : '❌';
+            
+            // Show
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            
+            // Hide after 3s
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
     </script>
 </body>
 </html>
