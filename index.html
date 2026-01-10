@@ -630,20 +630,36 @@
             }, 4000);
         }
 
-        document.getElementById('searchInput').addEventListener('input', renderTable);
-        document.getElementById('filterTingkatan').addEventListener('change', renderTable);
-        document.getElementById('filterKelas').addEventListener('change', renderTable);
-        document.getElementById('bellIcon').addEventListener('click', scrollToFirstLaporan);
-        document.getElementById('adminIcon').addEventListener('click', toggleAdmin);
-        document.getElementById('btnAutoPromote').addEventListener('click', autoPromote);
-        document.getElementById('btnSave').addEventListener('click', saveToSheet);
-        document.getElementById('btnDownload').addEventListener('click', downloadExcel);
-        document.getElementById('btnNextLaporan').addEventListener('click', nextLaporan);
-        document.getElementById('btnMarkResolved').addEventListener('click', markAsResolved);
-        document.getElementById('btnConfirmMove').addEventListener('click', confirmMove);
-        document.getElementById('btnCancelMove').addEventListener('click', closeModal);
+        window.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('searchInput').addEventListener('input', renderTable);
+            document.getElementById('filterTingkatan').addEventListener('change', renderTable);
+            document.getElementById('filterKelas').addEventListener('change', renderTable);
+            document.getElementById('bellIcon').addEventListener('click', scrollToFirstLaporan);
+            document.getElementById('adminIcon').addEventListener('click', toggleAdmin);
+            
+            const btnAutoPromote = document.getElementById('btnAutoPromote');
+            if (btnAutoPromote) btnAutoPromote.addEventListener('click', autoPromote);
+            
+            const btnSave = document.getElementById('btnSave');
+            if (btnSave) btnSave.addEventListener('click', saveToSheet);
+            
+            const btnPrint = document.getElementById('btnPrint');
+            if (btnPrint) btnPrint.addEventListener('click', printSelected);
+            
+            const btnNextLaporan = document.getElementById('btnNextLaporan');
+            if (btnNextLaporan) btnNextLaporan.addEventListener('click', nextLaporan);
+            
+            const btnMarkResolved = document.getElementById('btnMarkResolved');
+            if (btnMarkResolved) btnMarkResolved.addEventListener('click', markAsResolved);
+            
+            const btnConfirmMove = document.getElementById('btnConfirmMove');
+            if (btnConfirmMove) btnConfirmMove.addEventListener('click', confirmMove);
+            
+            const btnCancelMove = document.getElementById('btnCancelMove');
+            if (btnCancelMove) btnCancelMove.addEventListener('click', closeModal);
 
-        loadData();
+            loadData();
+        });
     </script>
 </body>
 </html>
