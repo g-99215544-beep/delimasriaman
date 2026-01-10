@@ -8,14 +8,14 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; padding: 20px; }
         .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; position: relative; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; position: relative; padding-right: 100px; }
         .header h1 { font-size: 24px; margin-bottom: 5px; }
         .header p { font-size: 14px; opacity: 0.9; }
-        .admin-icon { position: absolute; top: 20px; right: 20px; font-size: 28px; cursor: pointer; transition: transform 0.2s; }
+        .admin-icon { position: absolute; top: 20px; right: 20px; font-size: 24px; cursor: pointer; transition: transform 0.2s; }
         .admin-icon:hover { transform: scale(1.1); }
-        .bell-icon { position: absolute; top: 20px; right: 60px; font-size: 28px; cursor: pointer; transition: transform 0.2s; }
+        .bell-icon { position: absolute; top: 20px; right: 55px; font-size: 24px; cursor: pointer; transition: transform 0.2s; }
         .bell-icon:hover { transform: scale(1.1); }
-        .badge { position: absolute; top: 12px; right: 52px; background: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 12px; font-weight: bold; min-width: 20px; text-align: center; display: none; }
+        .badge { position: absolute; top: 12px; right: 47px; background: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 11px; font-weight: bold; min-width: 18px; text-align: center; display: none; }
         .badge.show { display: block; }
         .controls { padding: 20px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; }
         .controls-row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
@@ -52,7 +52,12 @@
         .status-message.error { background: #fee2e2; color: #991b1b; display: block; }
         select.laporan-select { width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 3px; font-size: 13px; }
         @media (max-width: 768px) {
-            .header h1 { font-size: 18px; }
+            .header { padding: 15px; padding-right: 90px; }
+            .header h1 { font-size: 16px; margin-bottom: 3px; }
+            .header p { font-size: 12px; }
+            .bell-icon { top: 15px; right: 50px; font-size: 22px; }
+            .admin-icon { top: 15px; right: 15px; font-size: 22px; }
+            .badge { top: 8px; right: 42px; font-size: 10px; padding: 1px 5px; min-width: 16px; }
             .controls-row { flex-direction: column; }
             input[type="text"], select, button { width: 100%; }
             table { font-size: 12px; }
@@ -94,7 +99,7 @@
             <div class="controls-row">
                 <button class="btn-primary admin-only" id="btnAutoPromote">🚀 Auto Naik Kelas (2026 → 2027)</button>
                 <button class="btn-success admin-only" id="btnSave">☁️ Simpan ke Google Sheet</button>
-                <button class="btn-secondary" id="btnDownload">⬇ Download Excel</button>
+                <button class="btn-secondary" id="btnPrint">🖨️ Print Selected</button>
                 <button class="btn-primary admin-only" id="btnNextLaporan">⏭️ Next Laporan</button>
                 <button class="btn-success admin-only" id="btnMarkResolved">✅ Mark as Resolved</button>
             </div>
@@ -531,28 +536,88 @@
             }
         }
 
-        function downloadExcel() {
-            let csv = headers.join(',') + '\n';
+        function printSelected() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filterT = document.getElementById('filterTingkatan').value;
+            const filterK = document.getElementById('filterKelas').value;
             
-            students.forEach(function(student) {
-                const row = headers.map(function(h) {
-                    const val = student[h] || '';
-                    return '"' + String(val).replace(/"/g, '""') + '"';
+            const filteredStudents = students.filter(function(student) {
+                const matchSearch = !searchTerm || Object.values(student).some(function(val) {
+                    return String(val).toLowerCase().includes(searchTerm);
                 });
-                csv += row.join(',') + '\n';
+                const matchTingkatan = !filterT || student['Darjah'] === filterT;
+                const matchKelas = !filterK || student['Nama Kelas'] === filterK;
+                
+                return matchSearch && matchTingkatan && matchKelas;
             });
-
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
             
-            link.setAttribute('href', url);
-            link.setAttribute('download', 'ID_Delima_' + new Date().toISOString().split('T')[0] + '.csv');
-            link.style.visibility = 'hidden';
+            if (filteredStudents.length === 0) {
+                showMessage('Tiada data untuk di print', 'error');
+                return;
+            }
             
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            let printWindow = window.open('', '', 'width=800,height=600');
+            
+            let html = '<!DOCTYPE html><html><head><title>Print - ID Delima Murid</title>';
+            html += '<style>';
+            html += 'body { font-family: Arial, sans-serif; padding: 20px; }';
+            html += 'h2 { text-align: center; margin-bottom: 5px; }';
+            html += 'p { text-align: center; margin-bottom: 20px; color: #666; }';
+            html += 'table { width: 100%; border-collapse: collapse; font-size: 12px; }';
+            html += 'th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }';
+            html += 'th { background-color: #667eea; color: white; font-weight: bold; }';
+            html += 'tr:nth-child(even) { background-color: #f9f9f9; }';
+            html += '@media print { button { display: none; } }';
+            html += '</style></head><body>';
+            
+            html += '<h2>Sistem Semak & Edit ID Delima Murid</h2>';
+            html += '<p>SK Sri Aman</p>';
+            
+            if (searchTerm || filterT || filterK) {
+                html += '<p style="font-weight: bold;">Filter: ';
+                if (searchTerm) html += 'Carian: "' + searchTerm + '" ';
+                if (filterT) html += 'Darjah: ' + filterT + ' ';
+                if (filterK) html += 'Kelas: ' + filterK + ' ';
+                html += '</p>';
+            }
+            
+            html += '<table>';
+            html += '<thead><tr>';
+            html += '<th>No</th>';
+            html += '<th>IC MURID</th>';
+            html += '<th>Nama Murid</th>';
+            html += '<th>Darjah</th>';
+            html += '<th>Nama Kelas</th>';
+            html += '<th>Email</th>';
+            html += '<th>Password</th>';
+            html += '<th>LAPORAN</th>';
+            html += '</tr></thead>';
+            html += '<tbody>';
+            
+            filteredStudents.forEach(function(student) {
+                html += '<tr>';
+                html += '<td>' + (student['No'] || '') + '</td>';
+                html += '<td>' + (student['IC MURID'] || '') + '</td>';
+                html += '<td>' + (student['Nama Murid'] || '') + '</td>';
+                html += '<td>' + (student['Darjah'] || '') + '</td>';
+                html += '<td>' + (student['Nama Kelas'] || '') + '</td>';
+                html += '<td>' + (student['Email'] || '') + '</td>';
+                html += '<td>' + (student['Password'] || '') + '</td>';
+                html += '<td>' + (student['LAPORAN'] || '') + '</td>';
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            html += '<p style="margin-top: 20px; font-size: 11px; color: #999;">Jumlah rekod: ' + filteredStudents.length + ' murid</p>';
+            html += '</body></html>';
+            
+            printWindow.document.write(html);
+            printWindow.document.close();
+            
+            printWindow.onload = function() {
+                printWindow.focus();
+                printWindow.print();
+            };
         }
 
         function showMessage(message, type) {
