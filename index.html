@@ -176,6 +176,7 @@
                 
                 console.log('Raw data received:', data);
                 console.log('Headers (Row 1):', data[0]);
+                console.log('First student data:', data[1]);
                 
                 if (data && data.length > 0) {
                     headers = data[0];
@@ -240,7 +241,7 @@
                     createCell(row, student['Nama Murid'] || '', isAdmin, 'Nama Murid', index);
                     createCell(row, student['Darjah'] || '', false, '', index);
                     createCell(row, student['Nama Kelas'] || '', false, '', index);
-                    createCell(row, student['Email (m-xxxx@moe-dl.edu.my)'] || '', isAdmin, 'Email (m-xxxx@moe-dl.edu.my)', index);
+                    createCell(row, student['Email'] || '', isAdmin, 'Email', index);
                     createCell(row, student['Password'] || '', isAdmin, 'Password', index);
                     
                     const laporanCell = document.createElement('td');
