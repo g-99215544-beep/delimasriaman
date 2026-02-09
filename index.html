@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Semak & Edit ID Delima Murid - SK Sri Aman</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; padding: 20px; }
@@ -51,6 +53,35 @@
         .status-message.success { background: #d1fae5; color: #065f46; display: block; }
         .status-message.error { background: #fee2e2; color: #991b1b; display: block; }
         select.laporan-select { width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 3px; font-size: 13px; }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-warning:hover { background: #d97706; }
+        .laporan-modal-content { background: white; padding: 30px; border-radius: 12px; max-width: 600px; width: 95%; max-height: 85vh; display: flex; flex-direction: column; }
+        .laporan-modal-content h3 { margin-bottom: 15px; color: #374151; }
+        .laporan-search { width: 100%; padding: 10px 14px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; margin-bottom: 10px; outline: none; transition: border-color 0.2s; }
+        .laporan-search:focus { border-color: #667eea; }
+        .class-filter-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .class-filter-btn { padding: 6px 14px; border: 1px solid #d1d5db; border-radius: 20px; background: white; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+        .class-filter-btn.active { background: #667eea; color: white; border-color: #667eea; }
+        .student-list-container { flex: 1; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 15px; max-height: 350px; }
+        .student-item { display: flex; align-items: center; padding: 10px 14px; border-bottom: 1px solid #f3f4f6; cursor: pointer; transition: background 0.15s; }
+        .student-item:last-child { border-bottom: none; }
+        .student-item:hover { background: #f0f4ff; }
+        .student-item.checked { background: #eef2ff; }
+        .student-item input[type="checkbox"] { margin-right: 12px; width: 18px; height: 18px; accent-color: #667eea; cursor: pointer; }
+        .student-item-name { font-size: 14px; color: #1f2937; flex: 1; }
+        .student-item-class { font-size: 12px; color: #6b7280; background: #f3f4f6; padding: 2px 8px; border-radius: 10px; }
+        .laporan-footer { display: flex; justify-content: space-between; align-items: center; }
+        .selected-count { font-size: 13px; color: #6b7280; }
+        .selected-count strong { color: #667eea; }
+        .laporan-footer-buttons { display: flex; gap: 10px; }
+        .notification-toast { position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 16px 24px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 2000; display: none; animation: slideIn 0.3s ease-out; max-width: 400px; }
+        .notification-toast.show { display: flex; align-items: center; gap: 10px; }
+        .notification-toast .notif-icon { font-size: 20px; }
+        .notification-toast .notif-text { font-size: 14px; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .select-all-row { display: flex; align-items: center; padding: 8px 14px; border-bottom: 2px solid #e5e7eb; background: #f9fafb; font-weight: 600; font-size: 13px; color: #374151; cursor: pointer; }
+        .select-all-row input[type="checkbox"] { margin-right: 12px; width: 18px; height: 18px; accent-color: #667eea; cursor: pointer; }
+        .no-results { padding: 30px; text-align: center; color: #9ca3af; font-size: 14px; }
         @media (max-width: 768px) {
             .header { padding: 15px; padding-right: 90px; }
             .header h1 { font-size: 16px; margin-bottom: 3px; }
@@ -97,6 +128,7 @@
                 </select>
             </div>
             <div class="controls-row">
+                <button class="btn-warning" id="btnLaporanTiadaNama">📋 Laporan Murid Tiada Nama</button>
                 <button class="btn-primary admin-only" id="btnAutoPromote">🚀 Auto Naik Kelas (2026 → 2027)</button>
                 <button class="btn-success admin-only" id="btnSave">☁️ Simpan ke Google Sheet</button>
                 <button class="btn-secondary" id="btnPrint">🖨️ Print Selected</button>
@@ -153,6 +185,35 @@
                 <button class="btn-secondary" id="btnCancelMove">Batal</button>
             </div>
         </div>
+    </div>
+
+    <div id="laporanModal" class="modal">
+        <div class="laporan-modal-content">
+            <h3>📋 Laporan Murid Tiada Nama</h3>
+            <input type="text" class="laporan-search" id="laporanSearch" placeholder="🔍 Cari nama murid...">
+            <div class="class-filter-row" id="classFilterRow">
+                <button class="class-filter-btn active" data-class="all">Semua</button>
+            </div>
+            <div class="student-list-container" id="studentListContainer">
+                <div class="select-all-row" id="selectAllRow">
+                    <input type="checkbox" id="selectAllCheckbox">
+                    <span>Pilih Semua</span>
+                </div>
+                <div id="studentCheckList"></div>
+            </div>
+            <div class="laporan-footer">
+                <div class="selected-count">Dipilih: <strong id="selectedCountNum">0</strong> murid</div>
+                <div class="laporan-footer-buttons">
+                    <button class="btn-secondary" id="btnCancelLaporan">Batal</button>
+                    <button class="btn-success" id="btnSubmitLaporan">📤 Hantar Laporan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="notificationToast" class="notification-toast">
+        <span class="notif-icon">🔔</span>
+        <span class="notif-text" id="notifText"></span>
     </div>
 
     <script>
@@ -630,6 +691,301 @@
             }, 4000);
         }
 
+        // Firebase Config - Kehadiran Murid (READ ONLY - fetch student names)
+        const kehadiranFirebaseConfig = {
+            apiKey: "AIzaSyDbCgDz2vK2BZUpwM3iDWJcPQSptVcNkv4",
+            authDomain: "kehadiran-murid-6ece0.firebaseapp.com",
+            databaseURL: "https://kehadiran-murid-6ece0-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "kehadiran-murid-6ece0",
+            storageBucket: "kehadiran-murid-6ece0.firebasestorage.app",
+            messagingSenderId: "223849234784",
+            appId: "1:223849234784:web:e1471ded7ea17ba60bde05",
+            measurementId: "G-4DY138HKTW"
+        };
+
+        // Firebase Config - Delima Database (WRITE reports here)
+        const delimaFirebaseConfig = {
+            apiKey: "AIzaSyC54PGqXbP5jyxA8C1Yh9uLeJaO5GHnfBo",
+            authDomain: "delimadatabasesriaman.firebaseapp.com",
+            databaseURL: "https://delimadatabasesriaman-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "delimadatabasesriaman",
+            storageBucket: "delimadatabasesriaman.firebasestorage.app",
+            messagingSenderId: "349885664668",
+            appId: "1:349885664668:web:4317d1af6f239e2c780c59",
+            measurementId: "G-Z3BT8MGP1G"
+        };
+
+        const kehadiranApp = firebase.initializeApp(kehadiranFirebaseConfig, 'kehadiran');
+        const delimaApp = firebase.initializeApp(delimaFirebaseConfig, 'delima');
+        const kehadiranDb = firebase.database(kehadiranApp);
+        const delimaDb = firebase.database(delimaApp);
+
+        let firebaseStudents = [];
+        let selectedStudents = new Set();
+        let activeClassFilter = 'all';
+
+        async function fetchFirebaseStudents() {
+            try {
+                const snapshot = await kehadiranDb.ref('config/classes/classData').once('value');
+                const classData = snapshot.val();
+                firebaseStudents = [];
+
+                if (classData) {
+                    Object.keys(classData).forEach(function(className) {
+                        const studentsInClass = classData[className];
+                        if (studentsInClass) {
+                            if (Array.isArray(studentsInClass)) {
+                                studentsInClass.forEach(function(name) {
+                                    if (name && name.trim()) {
+                                        firebaseStudents.push({ name: name.trim(), className: className });
+                                    }
+                                });
+                            } else {
+                                Object.keys(studentsInClass).forEach(function(key) {
+                                    var name = studentsInClass[key];
+                                    if (name && typeof name === 'string' && name.trim()) {
+                                        firebaseStudents.push({ name: name.trim(), className: className });
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }
+
+                firebaseStudents.sort(function(a, b) {
+                    if (a.className < b.className) return -1;
+                    if (a.className > b.className) return 1;
+                    return a.name.localeCompare(b.name);
+                });
+
+                return firebaseStudents;
+            } catch (error) {
+                console.error('Error fetching Firebase students:', error);
+                showMessage('Gagal memuatkan senarai murid dari Firebase: ' + error.message, 'error');
+                return [];
+            }
+        }
+
+        function getAvailableClasses() {
+            var classes = [];
+            firebaseStudents.forEach(function(s) {
+                if (classes.indexOf(s.className) === -1) {
+                    classes.push(s.className);
+                }
+            });
+            classes.sort();
+            return classes;
+        }
+
+        function renderClassFilters() {
+            var filterRow = document.getElementById('classFilterRow');
+            filterRow.innerHTML = '<button class="class-filter-btn ' + (activeClassFilter === 'all' ? 'active' : '') + '" data-class="all">Semua</button>';
+            var classes = getAvailableClasses();
+            classes.forEach(function(cls) {
+                var btn = document.createElement('button');
+                btn.className = 'class-filter-btn' + (activeClassFilter === cls ? ' active' : '');
+                btn.dataset.class = cls;
+                btn.textContent = cls;
+                btn.addEventListener('click', function() {
+                    activeClassFilter = cls;
+                    updateClassFilterUI();
+                    renderStudentCheckList();
+                });
+                filterRow.appendChild(btn);
+            });
+
+            filterRow.querySelector('[data-class="all"]').addEventListener('click', function() {
+                activeClassFilter = 'all';
+                updateClassFilterUI();
+                renderStudentCheckList();
+            });
+        }
+
+        function updateClassFilterUI() {
+            document.querySelectorAll('.class-filter-btn').forEach(function(btn) {
+                btn.classList.remove('active');
+                if (btn.dataset.class === activeClassFilter) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        function renderStudentCheckList() {
+            var container = document.getElementById('studentCheckList');
+            var searchTerm = document.getElementById('laporanSearch').value.toLowerCase().trim();
+            container.innerHTML = '';
+
+            var filtered = firebaseStudents.filter(function(s) {
+                var matchClass = activeClassFilter === 'all' || s.className === activeClassFilter;
+                var matchSearch = !searchTerm || s.name.toLowerCase().includes(searchTerm);
+                return matchClass && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="no-results">Tiada murid dijumpai</div>';
+                return;
+            }
+
+            filtered.forEach(function(student) {
+                var key = student.className + '|' + student.name;
+                var div = document.createElement('div');
+                div.className = 'student-item' + (selectedStudents.has(key) ? ' checked' : '');
+
+                var checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = selectedStudents.has(key);
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        selectedStudents.add(key);
+                        div.classList.add('checked');
+                    } else {
+                        selectedStudents.delete(key);
+                        div.classList.remove('checked');
+                    }
+                    updateSelectedCount();
+                    updateSelectAllCheckbox();
+                });
+
+                var nameSpan = document.createElement('span');
+                nameSpan.className = 'student-item-name';
+                nameSpan.textContent = student.name;
+
+                var classSpan = document.createElement('span');
+                classSpan.className = 'student-item-class';
+                classSpan.textContent = student.className;
+
+                div.appendChild(checkbox);
+                div.appendChild(nameSpan);
+                div.appendChild(classSpan);
+
+                div.addEventListener('click', function(e) {
+                    if (e.target.tagName !== 'INPUT') {
+                        checkbox.checked = !checkbox.checked;
+                        checkbox.dispatchEvent(new Event('change'));
+                    }
+                });
+
+                container.appendChild(div);
+            });
+
+            updateSelectAllCheckbox();
+        }
+
+        function updateSelectedCount() {
+            document.getElementById('selectedCountNum').textContent = selectedStudents.size;
+        }
+
+        function updateSelectAllCheckbox() {
+            var container = document.getElementById('studentCheckList');
+            var checkboxes = container.querySelectorAll('input[type="checkbox"]');
+            var allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(function(cb) { return cb.checked; });
+            document.getElementById('selectAllCheckbox').checked = allChecked;
+        }
+
+        function toggleSelectAll() {
+            var container = document.getElementById('studentCheckList');
+            var checkboxes = container.querySelectorAll('input[type="checkbox"]');
+            var selectAllCb = document.getElementById('selectAllCheckbox');
+            var shouldCheck = selectAllCb.checked;
+
+            checkboxes.forEach(function(cb) {
+                if (cb.checked !== shouldCheck) {
+                    cb.checked = shouldCheck;
+                    cb.dispatchEvent(new Event('change'));
+                }
+            });
+        }
+
+        async function openLaporanModal() {
+            selectedStudents.clear();
+            activeClassFilter = 'all';
+            document.getElementById('laporanSearch').value = '';
+            updateSelectedCount();
+
+            document.getElementById('laporanModal').classList.add('show');
+            showMessage('Memuatkan senarai murid...', 'success');
+
+            await fetchFirebaseStudents();
+
+            if (firebaseStudents.length > 0) {
+                renderClassFilters();
+                renderStudentCheckList();
+                showMessage('Senarai murid berjaya dimuatkan (' + firebaseStudents.length + ' murid)', 'success');
+            } else {
+                showMessage('Tiada data murid ditemui', 'error');
+            }
+        }
+
+        function closeLaporanModal() {
+            document.getElementById('laporanModal').classList.remove('show');
+        }
+
+        async function submitLaporan() {
+            if (selectedStudents.size === 0) {
+                showMessage('Sila pilih sekurang-kurangnya seorang murid', 'error');
+                return;
+            }
+
+            var selectedList = [];
+            selectedStudents.forEach(function(key) {
+                var parts = key.split('|');
+                selectedList.push({ className: parts[0], name: parts[1] });
+            });
+
+            var report = {
+                tajuk: 'LAPORAN MURID TIADA NAMA',
+                tarikhLaporan: new Date().toISOString(),
+                tarikhDisplay: new Date().toLocaleString('ms-MY', {
+                    day: '2-digit', month: '2-digit', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                }),
+                jumlahMurid: selectedList.length,
+                senaraiMurid: selectedList,
+                status: 'BARU'
+            };
+
+            try {
+                var newRef = delimaDb.ref('laporanMuridTiadaNama').push();
+                await newRef.set(report);
+
+                // Add notification for admin
+                var notifRef = delimaDb.ref('notifications').push();
+                await notifRef.set({
+                    type: 'LAPORAN_TIADA_NAMA',
+                    message: 'Laporan baharu: ' + selectedList.length + ' murid tiada nama tag dilaporkan',
+                    reportId: newRef.key,
+                    timestamp: new Date().toISOString(),
+                    read: false
+                });
+
+                closeLaporanModal();
+                showMessage('Laporan berjaya dihantar! (' + selectedList.length + ' murid)', 'success');
+                showNotification('Laporan baharu berjaya dihantar! ' + selectedList.length + ' murid tiada nama telah dilaporkan. Admin akan mengambil tindakan.');
+            } catch (error) {
+                console.error('Error saving report:', error);
+                showMessage('Gagal menghantar laporan: ' + error.message, 'error');
+            }
+        }
+
+        function showNotification(message) {
+            var toast = document.getElementById('notificationToast');
+            document.getElementById('notifText').textContent = message;
+            toast.classList.add('show');
+            setTimeout(function() {
+                toast.classList.remove('show');
+            }, 6000);
+        }
+
+        // Listen for new notifications from Firebase
+        function listenForNotifications() {
+            delimaDb.ref('notifications').orderByChild('read').equalTo(false).on('child_added', function(snapshot) {
+                var notif = snapshot.val();
+                if (notif && notif.type === 'LAPORAN_TIADA_NAMA') {
+                    showNotification('⚠️ ' + notif.message);
+                }
+            });
+        }
+
         window.addEventListener('DOMContentLoaded', function() {
             document.getElementById('searchInput').addEventListener('input', renderTable);
             document.getElementById('filterTingkatan').addEventListener('change', renderTable);
@@ -658,6 +1014,22 @@
             const btnCancelMove = document.getElementById('btnCancelMove');
             if (btnCancelMove) btnCancelMove.addEventListener('click', closeModal);
 
+            var btnLaporanTiadaNama = document.getElementById('btnLaporanTiadaNama');
+            if (btnLaporanTiadaNama) btnLaporanTiadaNama.addEventListener('click', openLaporanModal);
+
+            var btnCancelLaporan = document.getElementById('btnCancelLaporan');
+            if (btnCancelLaporan) btnCancelLaporan.addEventListener('click', closeLaporanModal);
+
+            var btnSubmitLaporan = document.getElementById('btnSubmitLaporan');
+            if (btnSubmitLaporan) btnSubmitLaporan.addEventListener('click', submitLaporan);
+
+            var selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            if (selectAllCheckbox) selectAllCheckbox.addEventListener('change', toggleSelectAll);
+
+            var laporanSearch = document.getElementById('laporanSearch');
+            if (laporanSearch) laporanSearch.addEventListener('input', renderStudentCheckList);
+
+            listenForNotifications();
             loadData();
         });
     </script>
